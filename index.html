@@ -6,9 +6,6 @@
 <title>MY.zip — 나만의 도구 모음</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* ══════════════════════════════════════════════
-   ROOT TOKENS  (index.html 팔레트 그대로)
-══════════════════════════════════════════════ */
 :root {
   --bg:           #f7f4ef;
   --ink:          #1a1814;
@@ -17,17 +14,14 @@
   --accent:       #c8401a;
   --accent-light: rgba(200,64,26,0.07);
   --surface:      #ffffff;
-  --surface2:     #f0ece5;
   --border:       rgba(26,24,20,0.10);
   --border2:      rgba(26,24,20,0.20);
-
-  /* 도구별 태그 색 */
   --tag-portfolio: #1a5fc8;
   --tag-annual:    #1a8c4e;
   --tag-weekly:    #7b3fc8;
-
   --radius: 14px;
   --sidebar-w: 272px;
+  --topbar-h: 52px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -40,26 +34,13 @@ body {
   overflow-x: hidden;
 }
 
-/* 배경 그라디언트 (index.html 동일) */
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background:
-    radial-gradient(circle at 10% 15%, rgba(200,64,26,0.04) 0%, transparent 50%),
-    radial-gradient(circle at 90% 85%, rgba(26,95,200,0.04) 0%, transparent 50%);
-  pointer-events: none; z-index: 0;
-}
-
-/* ══ LAYOUT ══ */
+/* ══ 데스크톱 레이아웃 ══ */
 .layout {
-  position: relative; z-index: 1;
   display: flex;
   min-height: 100vh;
 }
 
-/* ══════════════════════
-   SIDEBAR
-══════════════════════ */
+/* ════ SIDEBAR ════ */
 .sidebar {
   width: var(--sidebar-w);
   flex-shrink: 0;
@@ -71,11 +52,8 @@ body::before {
   top: 0;
   height: 100vh;
   overflow-y: auto;
-  z-index: 50;
-  transition: transform 0.24s ease;
 }
 
-/* 로고 */
 .logo-area {
   padding: 1.75rem 1.5rem 1.25rem;
   border-bottom: 1px solid var(--border);
@@ -101,8 +79,8 @@ body::before {
   align-items: baseline;
   transition: opacity 0.15s;
 }
-.logo-big  { font-size: 24px; }
-.logo-zip  {
+.logo-big { font-size: 24px; }
+.logo-zip {
   font-family: 'DM Mono', monospace;
   font-size: 18px;
   font-weight: 500;
@@ -118,7 +96,6 @@ body::before {
   line-height: 1.6;
 }
 
-/* 내비 */
 nav { padding: 0.75rem 0; flex: 1; }
 
 .nav-group-label {
@@ -134,7 +111,7 @@ nav { padding: 0.75rem 0; flex: 1; }
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0.55rem 1.25rem 0.55rem 1.5rem;
+  padding: 0.6rem 1.25rem 0.6rem 1.5rem;
   font-size: 12.5px;
   color: var(--ink-muted);
   cursor: pointer;
@@ -172,16 +149,13 @@ nav { padding: 0.75rem 0; flex: 1; }
   line-height: 1.8;
 }
 
-/* ══════════════════════
-   MAIN
-══════════════════════ */
+/* ════ MAIN ════ */
 main {
   flex: 1;
   min-width: 0;
   position: relative;
 }
 
-/* ── 홈 뷰 ── */
 .home-view {
   padding: 3.5rem 4rem 4rem;
   max-width: 900px;
@@ -212,8 +186,6 @@ main {
   max-width: 480px;
   margin-bottom: 3rem;
 }
-
-/* ── 섹션 제목 ── */
 .home-section-title {
   font-family: 'Noto Serif KR', serif;
   font-size: 13px;
@@ -226,13 +198,11 @@ main {
   border-bottom: 1px solid var(--border);
 }
 
-/* ── 카드 그리드 ── */
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
   gap: 1rem;
 }
-
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -243,16 +213,15 @@ main {
   flex-direction: column;
   gap: 0.45rem;
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
-  animation: fadeUp 0.4s ease both;
+  animation: fadeUp 0.38s ease both;
 }
-.card:nth-child(2) { animation-delay: 0.07s; }
-.card:nth-child(3) { animation-delay: 0.14s; }
+.card:nth-child(2) { animation-delay: .07s; }
+.card:nth-child(3) { animation-delay: .14s; }
 .card:hover {
   border-color: var(--border2);
   transform: translateY(-3px);
   box-shadow: 0 10px 36px rgba(26,24,20,0.08);
 }
-
 .card-tag {
   font-family: 'DM Mono', monospace;
   font-size: 9px;
@@ -267,10 +236,9 @@ main {
 .tag-portfolio { background: var(--tag-portfolio); }
 .tag-annual    { background: var(--tag-annual); }
 .tag-weekly    { background: var(--tag-weekly); }
-
 .card-name {
   font-family: 'Noto Serif KR', serif;
-  font-size: 16.5px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--ink);
@@ -293,7 +261,7 @@ main {
 }
 .card:hover .card-arrow { color: var(--accent); transform: translateX(4px); }
 
-/* ══ 도구 뷰 (iframe) ══ */
+/* 도구 뷰 */
 .tool-view {
   display: none;
   position: absolute;
@@ -308,84 +276,60 @@ main {
   align-items: center;
   gap: 12px;
   padding: 0 1.5rem;
-  height: 52px;
+  height: var(--topbar-h);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 .tool-back {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12.5px;
-  color: var(--ink-muted);
-  cursor: pointer;
-  border: none;
-  background: none;
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12.5px; color: var(--ink-muted);
+  cursor: pointer; border: none; background: none;
   font-family: 'Noto Sans KR', sans-serif;
-  padding: 5px 10px;
-  border-radius: 7px;
+  padding: 5px 10px; border-radius: 7px;
   transition: all 0.12s;
 }
 .tool-back:hover { color: var(--ink); background: var(--bg); }
 .tool-back svg { width: 14px; height: 14px; }
-.tool-sep { width: 1px; height: 20px; background: var(--border2); }
-.tool-title-bar {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+.tool-sep { width: 1px; height: 20px; background: var(--border2); flex-shrink: 0; }
+.tool-title-bar { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; }
 .tool-title-tag {
   font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 2px 7px;
-  border-radius: 4px;
-  color: #fff;
+  font-size: 9px; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 4px; color: #fff; flex-shrink: 0;
 }
 .tool-title-text {
   font-family: 'Noto Serif KR', serif;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ink);
+  font-size: 14px; font-weight: 700; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .tool-newtab {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  color: var(--ink-dim);
-  text-decoration: none;
-  padding: 5px 10px;
-  border-radius: 7px;
-  font-family: 'DM Mono', monospace;
-  transition: all 0.12s;
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--ink-dim);
+  text-decoration: none; padding: 5px 10px; border-radius: 7px;
+  font-family: 'DM Mono', monospace; transition: all 0.12s; flex-shrink: 0;
 }
 .tool-newtab:hover { color: var(--ink); background: var(--bg); }
 .tool-newtab svg { width: 12px; height: 12px; }
-
-.tool-iframe-wrap { flex: 1; position: relative; }
+.tool-iframe-wrap { flex: 1; position: relative; overflow: hidden; }
 .tool-iframe-wrap iframe {
   position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  border: none;
-  background: var(--bg);
+  width: 100%; height: 100%; border: none;
 }
 
-/* ══ 모바일 ══ */
+/* ══ 모바일 상단바 ══ */
 .mob-topbar {
   display: none;
   align-items: center;
   gap: 12px;
   padding: 0 1.25rem;
-  height: 52px;
+  height: var(--topbar-h);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  position: sticky; top: 0;
-  z-index: 100;
+  position: sticky;
+  top: 0;
+  /* z-index 없음 — 자연 스택 순서만 사용 */
 }
 .mob-hamburger {
   background: none; border: none; cursor: pointer;
@@ -397,53 +341,51 @@ main {
   font-weight: 900; font-size: 18px; color: var(--ink);
   display: flex; align-items: baseline; gap: 2px;
 }
-.mob-logo-zip {
-  font-family: 'DM Mono', monospace;
-  font-size: 14px; color: var(--ink-dim);
-}
+.mob-logo-zip { font-family: 'DM Mono', monospace; font-size: 14px; color: var(--ink-dim); }
 
-.drawer-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(26,24,20,0.3);
-  z-index: 50;
-  /* 사이드바는 z-index:500 이라 항상 오버레이 위 */
-}
-
-/* ── 애니메이션 ── */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(18px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.home-kicker { animation: fadeUp 0.38s ease both; }
-.home-title  { animation: fadeUp 0.42s 0.04s ease both; }
-.home-desc   { animation: fadeUp 0.42s 0.08s ease both; }
-.home-section-title { animation: fadeUp 0.4s 0.12s ease both; }
-
-/* ── 반응형 ── */
+/* ══ 모바일 반응형 ══ */
 @media (max-width: 760px) {
   .mob-topbar { display: flex; }
-  .sidebar {
-    position: fixed; top: 52px; left: 0; bottom: 0;
-    transform: translateX(-100%);
-    z-index: 500;
-    transition: transform 0.24s ease;
-    height: auto;
-  }
-  .sidebar.mob-open { transform: translateX(0); }
   .layout { flex-direction: column; }
-  main { min-height: calc(100vh - 52px); }
+
+  .sidebar {
+    position: fixed;
+    top: var(--topbar-h);
+    left: 0; bottom: 0;
+    height: auto;
+    width: 260px;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    z-index: 300;   /* 가장 위 */
+    overflow-y: auto;
+  }
+  .sidebar.is-open { transform: translateX(0); }
+
+  main { min-height: calc(100vh - var(--topbar-h)); }
   .home-view { padding: 1.75rem 1.25rem 2.5rem; }
-  .tool-view { position: fixed; inset: 0; top: 52px; z-index: 100; }
+
+  .tool-view {
+    position: fixed;
+    top: var(--topbar-h); left: 0; right: 0; bottom: 0;
+    z-index: 100;
+  }
 }
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(16px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.home-kicker        { animation: fadeUp .36s ease both; }
+.home-title         { animation: fadeUp .40s .04s ease both; }
+.home-desc          { animation: fadeUp .40s .08s ease both; }
+.home-section-title { animation: fadeUp .38s .12s ease both; }
 </style>
 </head>
 <body>
 
 <!-- 모바일 상단바 -->
 <div class="mob-topbar">
-  <button class="mob-hamburger" onclick="mobToggle()">
+  <button class="mob-hamburger" id="mobMenuBtn" aria-label="메뉴 열기">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
       <line x1="3" y1="6"  x2="21" y2="6"/>
       <line x1="3" y1="12" x2="21" y2="12"/>
@@ -452,11 +394,11 @@ main {
   </button>
   <div class="mob-logo">MY<span class="mob-logo-zip">.zip</span></div>
 </div>
+
 <div class="layout">
 
-  <!-- ══ 사이드바 ══ -->
+  <!-- 사이드바 -->
   <aside class="sidebar" id="sidebar">
-
     <div class="logo-area" onclick="goHome()">
       <div class="logo-eyebrow">Personal Tools</div>
       <div class="logo-title">
@@ -464,71 +406,50 @@ main {
       </div>
       <div class="logo-sub">나만의 도구 모음<br>3가지 도구</div>
     </div>
-
     <nav>
       <div class="nav-group-label">도구 목록</div>
-
       <button class="nav-item" id="nav-portfolio"
-              onclick="openTool('portfolio.html','주식 포트폴리오 관리','portfolio')">
-        <span class="nav-dot dot-portfolio"></span>
-        주식 포트폴리오 관리
+        onclick="openTool('portfolio.html','주식 포트폴리오 관리','portfolio')">
+        <span class="nav-dot dot-portfolio"></span>주식 포트폴리오 관리
       </button>
-
       <button class="nav-item" id="nav-annual"
-              onclick="openTool('scheduler-annual.html','연간 스케줄러','annual')">
-        <span class="nav-dot dot-annual"></span>
-        연간 스케줄러
+        onclick="openTool('scheduler-annual.html','연간 스케줄러','annual')">
+        <span class="nav-dot dot-annual"></span>연간 스케줄러
       </button>
-
       <button class="nav-item" id="nav-weekly"
-              onclick="openTool('scheduler-weekly.html','주간 스케줄러','weekly')">
-        <span class="nav-dot dot-weekly"></span>
-        주간 스케줄러
+        onclick="openTool('scheduler-weekly.html','주간 스케줄러','weekly')">
+        <span class="nav-dot dot-weekly"></span>주간 스케줄러
       </button>
     </nav>
-
-    <div class="sidebar-footer">
-      MY.zip<br>
-      Personal Workspace
-    </div>
+    <div class="sidebar-footer">MY.zip<br>Personal Workspace</div>
   </aside>
 
-  <!-- ══ 메인 ══ -->
+  <!-- 메인 -->
   <main>
-
-    <!-- 홈 뷰 -->
     <div class="home-view" id="homeView">
       <div class="home-kicker">Personal Workspace</div>
       <h1 class="home-title">나만의<br>도구 모음</h1>
-      <p class="home-desc">
-        주식 포트폴리오, 연간·주간 스케줄러를 한 페이지에서 바로 열어볼 수 있습니다.
-        아래 카드를 클릭하면 해당 도구가 우측에 바로 표시됩니다.
-      </p>
-
+      <p class="home-desc">주식 포트폴리오, 연간·주간 스케줄러를 한 페이지에서 바로 열어볼 수 있습니다.<br>아래 카드를 클릭하면 해당 도구가 바로 표시됩니다.</p>
       <div class="home-section-title">도구 목록</div>
       <div class="card-grid">
-
         <div class="card" onclick="openTool('portfolio.html','주식 포트폴리오 관리','portfolio')">
           <span class="card-tag tag-portfolio">투자</span>
           <span class="card-name">주식 포트폴리오<br>관리</span>
-          <span class="card-desc">보유 종목 수익률·비중·손익을 한눈에 관리하는 주식 포트폴리오 도구</span>
+          <span class="card-desc">보유 종목 수익률·비중·손익을 한눈에 관리</span>
           <span class="card-arrow">열기 →</span>
         </div>
-
         <div class="card" onclick="openTool('scheduler-annual.html','연간 스케줄러','annual')">
           <span class="card-tag tag-annual">플래너</span>
           <span class="card-name">연간 스케줄러</span>
-          <span class="card-desc">1년치 일정을 월별로 정리하는 연간 플래너 & 캘린더</span>
+          <span class="card-desc">1년치 일정을 월별로 정리하는 연간 플래너</span>
           <span class="card-arrow">열기 →</span>
         </div>
-
         <div class="card" onclick="openTool('scheduler-weekly.html','주간 스케줄러','weekly')">
           <span class="card-tag tag-weekly">플래너</span>
           <span class="card-name">주간 스케줄러</span>
-          <span class="card-desc">이번 주 할 일과 시간표를 시간대별로 계획하는 주간 플래너</span>
+          <span class="card-desc">이번 주 할 일과 시간표를 시간대별로 계획</span>
           <span class="card-arrow">열기 →</span>
         </div>
-
       </div>
     </div>
 
@@ -536,9 +457,7 @@ main {
     <div class="tool-view" id="toolView">
       <div class="tool-topbar">
         <button class="tool-back" onclick="closeTool()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
           목록
         </button>
         <div class="tool-sep"></div>
@@ -549,8 +468,7 @@ main {
         <a class="tool-newtab" id="toolNewTab" href="#" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
-            <polyline points="15 3 21 3 21 9"/>
-            <line x1="10" y1="14" x2="21" y2="3"/>
+            <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
           </svg>
           새 탭
         </a>
@@ -559,35 +477,59 @@ main {
         <iframe id="toolFrame" src="" title="도구 뷰어"></iframe>
       </div>
     </div>
-
   </main>
 </div>
 
 <script>
 const TOOLS = {
-  portfolio: { file:'portfolio.html',    title:'주식 포트폴리오 관리', label:'투자',   color:'#1a5fc8' },
-  annual:    { file:'scheduler-annual.html', title:'연간 스케줄러',      label:'플래너', color:'#1a8c4e' },
-  weekly:    { file:'scheduler-weekly.html', title:'주간 스케줄러',      label:'플래너', color:'#7b3fc8' },
+  portfolio: { file:'portfolio.html',        title:'주식 포트폴리오 관리', label:'투자',   color:'#1a5fc8' },
+  annual:    { file:'scheduler-annual.html', title:'연간 스케줄러',        label:'플래너', color:'#1a8c4e' },
+  weekly:    { file:'scheduler-weekly.html', title:'주간 스케줄러',        label:'플래너', color:'#7b3fc8' },
 };
-
 let activeKey = null;
 
-/* 오버레이를 body 맨 마지막에 동적으로 생성 → DOM 순서상 사이드바(z-index:500)가 항상 위 */
-const overlay = document.createElement('div');
-overlay.className = 'drawer-overlay';
-overlay.id = 'drawerOverlay';
-overlay.addEventListener('click', mobClose);
+/* ── 오버레이: body 맨 끝에 동적 생성
+       사이드바 z-index(300) < 오버레이 z-index(200) 이므로
+       오버레이를 클릭하면 사이드바가 닫히고,
+       사이드바 위 영역은 항상 사이드바(300)가 우선 ── */
+const overlay = Object.assign(document.createElement('div'), {
+  id: 'mobOverlay'
+});
+Object.assign(overlay.style, {
+  display:    'none',
+  position:   'fixed',
+  top:        'var(--topbar-h)',
+  left:       '0',
+  right:      '0',
+  bottom:     '0',
+  background: 'rgba(26,24,20,0.35)',
+  zIndex:     '200',
+});
 document.body.appendChild(overlay);
+overlay.addEventListener('click', closeSidebar);
+
+document.getElementById('mobMenuBtn').addEventListener('click', toggleSidebar);
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const opening = !sidebar.classList.contains('is-open');
+  sidebar.classList.toggle('is-open', opening);
+  overlay.style.display = opening ? 'block' : 'none';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('is-open');
+  overlay.style.display = 'none';
+}
 
 function openTool(file, title, key) {
   if (activeKey) document.getElementById('nav-' + activeKey)?.classList.remove('active');
   activeKey = key;
   document.getElementById('nav-' + key)?.classList.add('active');
 
-  const meta = TOOLS[key];
+  const { label, color } = TOOLS[key];
   const tagEl = document.getElementById('toolTag');
-  tagEl.textContent = meta.label;
-  tagEl.style.background = meta.color;
+  tagEl.textContent = label;
+  tagEl.style.background = color;
 
   document.getElementById('toolTitle').textContent = title;
   document.getElementById('toolFrame').src = file;
@@ -595,7 +537,7 @@ function openTool(file, title, key) {
   document.getElementById('homeView').classList.add('hidden');
   document.getElementById('toolView').classList.add('open');
 
-  mobClose();
+  closeSidebar();
   window.scrollTo({ top: 0 });
 }
 
@@ -609,18 +551,7 @@ function closeTool() {
   }
 }
 
-function goHome() { closeTool(); mobClose(); }
-
-function mobToggle() {
-  const sidebar = document.getElementById('sidebar');
-  const isOpen = sidebar.classList.toggle('mob-open');
-  overlay.style.display = isOpen ? 'block' : 'none';
-}
-
-function mobClose() {
-  document.getElementById('sidebar').classList.remove('mob-open');
-  overlay.style.display = 'none';
-}
+function goHome() { closeTool(); closeSidebar(); }
 </script>
 </body>
 </html>
