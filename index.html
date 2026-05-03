@@ -403,10 +403,13 @@ main {
 }
 
 .drawer-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(26,24,20,0.3); z-index: 150;
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26,24,20,0.3);
+  z-index: 50;
+  /* 사이드바는 z-index:500 이라 항상 오버레이 위 */
 }
-.drawer-overlay.open { display: block; }
 
 /* ── 애니메이션 ── */
 @keyframes fadeUp {
@@ -424,7 +427,7 @@ main {
   .sidebar {
     position: fixed; top: 52px; left: 0; bottom: 0;
     transform: translateX(-100%);
-    z-index: 200;
+    z-index: 500;
     transition: transform 0.24s ease;
     height: auto;
   }
@@ -449,8 +452,6 @@ main {
   </button>
   <div class="mob-logo">MY<span class="mob-logo-zip">.zip</span></div>
 </div>
-<div class="drawer-overlay" id="drawerOverlay" onclick="mobClose()"></div>
-
 <div class="layout">
 
   <!-- ══ 사이드바 ══ -->
@@ -563,50 +564,34 @@ main {
 </div>
 
 <script>
-/* ────────────────────────────────
-   도구 메타 정보
-──────────────────────────────── */
 const TOOLS = {
-  portfolio: {
-    file:  'portfolio.html',
-    title: '주식 포트폴리오 관리',
-    label: '투자',
-    color: 'var(--tag-portfolio)',
-  },
-  annual: {
-    file:  'scheduler-annual.html',
-    title: '연간 스케줄러',
-    label: '플래너',
-    color: 'var(--tag-annual)',
-  },
-  weekly: {
-    file:  'scheduler-weekly.html',
-    title: '주간 스케줄러',
-    label: '플래너',
-    color: 'var(--tag-weekly)',
-  },
+  portfolio: { file:'portfolio.html',    title:'주식 포트폴리오 관리', label:'투자',   color:'#1a5fc8' },
+  annual:    { file:'scheduler-annual.html', title:'연간 스케줄러',      label:'플래너', color:'#1a8c4e' },
+  weekly:    { file:'scheduler-weekly.html', title:'주간 스케줄러',      label:'플래너', color:'#7b3fc8' },
 };
 
 let activeKey = null;
 
+/* 오버레이를 body 맨 마지막에 동적으로 생성 → DOM 순서상 사이드바(z-index:500)가 항상 위 */
+const overlay = document.createElement('div');
+overlay.className = 'drawer-overlay';
+overlay.id = 'drawerOverlay';
+overlay.addEventListener('click', mobClose);
+document.body.appendChild(overlay);
+
 function openTool(file, title, key) {
-  // 내비 active
   if (activeKey) document.getElementById('nav-' + activeKey)?.classList.remove('active');
   activeKey = key;
   document.getElementById('nav-' + key)?.classList.add('active');
 
-  // 태그 배지
   const meta = TOOLS[key];
   const tagEl = document.getElementById('toolTag');
   tagEl.textContent = meta.label;
   tagEl.style.background = meta.color;
 
-  // iframe
   document.getElementById('toolTitle').textContent = title;
   document.getElementById('toolFrame').src = file;
   document.getElementById('toolNewTab').href = file;
-
-  // 뷰 전환
   document.getElementById('homeView').classList.add('hidden');
   document.getElementById('toolView').classList.add('open');
 
@@ -624,19 +609,17 @@ function closeTool() {
   }
 }
 
-function goHome() {
-  closeTool();
-  mobClose();
+function goHome() { closeTool(); mobClose(); }
+
+function mobToggle() {
+  const sidebar = document.getElementById('sidebar');
+  const isOpen = sidebar.classList.toggle('mob-open');
+  overlay.style.display = isOpen ? 'block' : 'none';
 }
 
-/* 모바일 드로어 */
-function mobToggle() {
-  document.getElementById('sidebar').classList.toggle('mob-open');
-  document.getElementById('drawerOverlay').classList.toggle('open');
-}
 function mobClose() {
   document.getElementById('sidebar').classList.remove('mob-open');
-  document.getElementById('drawerOverlay').classList.remove('open');
+  overlay.style.display = 'none';
 }
 </script>
 </body>
