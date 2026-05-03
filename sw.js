@@ -7,7 +7,7 @@ const CACHE_NAME = 'myzip-v1';
 
 /* 앱 실행에 필요한 핵심 파일 목록 */
 const PRECACHE_URLS = [
-  './index-hub.html',
+  './index.html',
   './portfolio.html',
   './scheduler-annual.html',
   './scheduler-weekly.html',
