@@ -404,7 +404,7 @@ main {
 
 .drawer-overlay {
   display: none; position: fixed; inset: 0;
-  background: rgba(26,24,20,0.3); z-index: 200;
+  background: rgba(26,24,20,0.3); z-index: 150;
 }
 .drawer-overlay.open { display: block; }
 
@@ -422,16 +422,17 @@ main {
 @media (max-width: 760px) {
   .mob-topbar { display: flex; }
   .sidebar {
-    position: fixed; top: 0; left: 0; bottom: 0;
+    position: fixed; top: 52px; left: 0; bottom: 0;
     transform: translateX(-100%);
-    z-index: 300;
+    z-index: 200;
     transition: transform 0.24s ease;
+    height: auto;
   }
   .sidebar.mob-open { transform: translateX(0); }
   .layout { flex-direction: column; }
   main { min-height: calc(100vh - 52px); }
   .home-view { padding: 1.75rem 1.25rem 2.5rem; }
-  .tool-view { position: fixed; inset: 0; top: 52px; z-index: 150; }
+  .tool-view { position: fixed; inset: 0; top: 52px; z-index: 100; }
 }
 </style>
 </head>
