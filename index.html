@@ -41,7 +41,7 @@ html, body {
   font-family: 'Noto Sans KR', sans-serif;
   background: var(--bg);
   color: var(--ink);
-  overflow-x: hidden;
+  overflow: hidden;   /* body 자체 스크롤 완전 차단 */
 }
 
 /* ════════════════════════════════
@@ -167,7 +167,9 @@ nav { padding: 0.75rem 0; flex: 1; }
 .main-area {
   flex: 1; min-width: 0;
   position: relative;
-  overflow-y: auto;   /* 스크롤은 여기서만 */
+  overflow-y: auto;
+  background: var(--bg);   /* 배경 명시 — 상단바 비침 방지 */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* 홈 뷰 */
@@ -280,14 +282,15 @@ nav { padding: 0.75rem 0; flex: 1; }
 .tool-iframe-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
 
 /* ════════════════════════════════
-   모바일 오버레이 (JS로 생성)
+   모바일 오버레이 — fixed로 고정 (스크롤 따라 움직이지 않음)
 ════════════════════════════════ */
 #mob-overlay {
   display: none;
-  position: absolute;   /* .page-body 기준 */
-  inset: 0;
+  position: fixed;     /* absolute → fixed: 스크롤해도 제자리 */
+  top: var(--topbar-h);
+  left: 0; right: 0; bottom: 0;
   background: rgba(26,24,20,0.45);
-  z-index: 100;         /* 사이드바(200)보다 낮음 */
+  z-index: 100;
 }
 #mob-overlay.show { display: block; }
 
@@ -298,14 +301,17 @@ nav { padding: 0.75rem 0; flex: 1; }
   /* 상단바 표시 */
   .topbar { display: flex; }
 
-  /* 사이드바: page-body 안에서 absolute로 슬라이드 */
+  /* 사이드바: fixed, 상단바 아래부터 */
   .sidebar {
-    position: absolute;
-    top: 0; left: 0; bottom: 0;
+    position: fixed;
+    top: var(--topbar-h);
+    left: 0; bottom: 0;
     width: 280px;
+    height: auto;
     transform: translateX(-100%);
     transition: transform 0.22s ease;
     z-index: 200;
+    overflow-y: auto;
   }
   .sidebar.is-open { transform: translateX(0); }
 
