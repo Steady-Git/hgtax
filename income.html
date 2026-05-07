@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>개인사업자 종합소득금액 계산기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f2f5;
+    --surface: #ffffff;
+    --surface2: #f8f9fb;
+    --border: #e2e6ea;
+    --border2: #cbd0d8;
+    --primary: #1a4fc4;
+    --primary-light: #e8eefb;
+    --primary-dark: #1340a0;
+    --accent: #e8602c;
+    --accent-light: #fdf0eb;
+    --text: #1a1d23;
+    --text2: #4a5060;
+    --text3: #8a909e;
+    --success: #16a34a;
+    --success-light: #f0fdf4;
+    --warning: #d97706;
+    --warning-light: #fffbeb;
+    --danger: #dc2626;
+    --danger-light: #fef2f2;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--primary);
+    color: #fff;
+    padding: 0 32px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(26,79,196,0.3);
+  }
+  header h1 { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+  header .subtitle { font-size: 12px; opacity: 0.75; margin-left: 12px; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .btn-calc-all {
+    background: #fff;
+    color: var(--primary);
+    border: none;
+    padding: 7px 16px;
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-calc-all:hover { background: #e8eefb; transform: translateY(-1px); }
+
+  /* ── Main Layout ── */
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+  }
+
+  /* ── Section Cards ── */
+  .section-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .section-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface2);
+    cursor: pointer;
+    user-select: none;
+  }
+  .section-header-left { display: flex; align-items: center; gap: 10px; }
+  .section-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .badge-general { background: var(--primary-light); color: var(--primary); }
+  .badge-realestate { background: var(--accent-light); color: var(--accent); }
+  .section-title { font-size: 14px; font-weight: 600; }
+  .section-income-preview {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--primary);
+  }
+  .section-toggle { font-size: 12px; color: var(--text3); transition: transform 0.2s; }
+  .section-toggle.open { transform: rotate(180deg); }
+
+  .section-body { padding: 20px; }
+  .section-body.collapsed { display: none; }
+
+  /* ── Field Rows ── */
+  .field-row {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .field-label {
+    font-size: 13px;
+    color: var(--text2);
+    font-weight: 500;
+    text-align: right;
+  }
+  .field-label .required { color: var(--accent); margin-left: 2px; }
+
+  /* ── Select / Input ── */
+  select, input[type="text"], input[type="number"] {
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 7px 10px;
+    background: #fff;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 100%;
+  }
+  select:focus, input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(26,79,196,0.1);
+  }
+  select { cursor: pointer; }
+
+  /* ── Radio Group ── */
+  .radio-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .radio-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+    background: #fff;
+    color: var(--text2);
+    user-select: none;
+  }
+  .radio-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .radio-btn input[type="radio"] { display: none; }
+  .radio-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    font-weight: 500;
+  }
+
+  /* ── 업종 Input ── */
+  .business-input-wrap {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .business-code-display {
+    flex: 0 0 90px;
+    padding: 7px 10px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text2);
+    text-align: center;
+  }
+  .business-name-display {
+    flex: 1;
+    padding: 7px 10px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    font-size: 13px;
+    color: var(--text2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .btn-search-business {
+    flex-shrink: 0;
+    padding: 7px 14px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn-search-business:hover { background: var(--primary-dark); }
+
+  /* ── Rate Display ── */
+  .rate-display {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .rate-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .rate-badge-label { font-family: 'Noto Sans KR', sans-serif; font-size: 11px; color: var(--text3); }
+  .rate-badge.simple { background: #eff6ff; color: #1d4ed8; }
+  .rate-badge.standard { background: #f0fdf4; color: #15803d; }
+  .rate-badge-value { font-weight: 600; font-size: 13px; }
+  .rate-94-notice {
+    font-size: 11px;
+    color: var(--warning);
+    background: var(--warning-light);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border-left: 3px solid var(--warning);
+  }
+
+  /* ── Amount Input ── */
+  .amount-input-wrap { position: relative; }
+  .amount-input-wrap input {
+    padding-right: 30px;
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .amount-unit {
+    position: absolute; right: 10px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px; color: var(--text3);
+  }
+
+  /* ── Result Row ── */
+  .result-row {
+    background: var(--primary-light);
+    border: 1px solid rgba(26,79,196,0.15);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+  }
+  .result-label { font-size: 13px; font-weight: 500; color: var(--primary); }
+  .result-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  /* ── Expense Detail ── */
+  .expense-detail {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.8;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ── 기장 직접 입력 ── */
+  .jangbu-section {
+    background: var(--surface2);
+    border: 1px dashed var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+  }
+
+  /* ── Add/Remove income buttons ── */
+  .income-items { display: flex; flex-direction: column; gap: 16px; }
+  .income-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    background: #fff;
+    position: relative;
+  }
+  .income-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .income-item-num {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text3);
+    background: var(--border);
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .btn-remove-item {
+    background: none;
+    border: 1px solid #fca5a5;
+    color: var(--danger);
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-remove-item:hover { background: var(--danger-light); }
+  .btn-add-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    background: none;
+    border: 1.5px dashed var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text3);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    width: 100%;
+    justify-content: center;
+    transition: all 0.15s;
+    margin-top: 12px;
+  }
+  .btn-add-item:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+  /* ── Total Summary ── */
+  .total-summary {
+    background: var(--surface);
+    border: 2px solid var(--primary);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow-lg);
+  }
+  .total-summary h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .total-lines { display: flex; flex-direction: column; gap: 0; }
+  .total-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .total-line:last-child { border-bottom: none; }
+  .total-line-label { color: var(--text2); }
+  .total-line-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .total-line.grand {
+    padding: 14px 0 0;
+    border-top: 2px solid var(--primary);
+    margin-top: 4px;
+  }
+  .total-line.grand .total-line-label { font-size: 15px; font-weight: 700; color: var(--primary); }
+  .total-line.grand .total-line-value { font-size: 20px; color: var(--primary); }
+
+  /* ── Status Bar ── */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    margin-top: 12px;
+  }
+  .status-bar.loading { background: #fffbeb; color: var(--warning); border: 1px solid #fde68a; }
+  .status-bar.success { background: var(--success-light); color: var(--success); border: 1px solid #bbf7d0; }
+  .status-bar.error { background: var(--danger-light); color: var(--danger); border: 1px solid #fca5a5; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .status-dot.pulse { animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 640px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    animation: modalIn 0.2s ease;
+  }
+  @keyframes modalIn { from{transform:scale(0.95);opacity:0;} to{transform:scale(1);opacity:1;} }
+  .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-title { font-size: 15px; font-weight: 700; }
+  .modal-close {
+    background: none; border: none;
+    font-size: 20px; color: var(--text3);
+    cursor: pointer; line-height: 1;
+    padding: 2px 6px; border-radius: 4px;
+  }
+  .modal-close:hover { background: var(--border); }
+  .modal-search {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-search input {
+    padding: 9px 12px;
+    font-size: 14px;
+  }
+  .modal-list {
+    overflow-y: auto;
+    flex: 1;
+    padding: 8px 0;
+  }
+  .modal-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.1s;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-item:last-child { border-bottom: none; }
+  .modal-item:hover { background: var(--primary-light); }
+  .modal-item-code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary);
+    flex-shrink: 0;
+    width: 60px;
+  }
+  .modal-item-name { font-size: 13px; color: var(--text2); flex: 1; }
+  .modal-item-category { font-size: 11px; color: var(--text3); flex-shrink: 0; max-width: 120px; text-align: right; }
+  .modal-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text3);
+    font-size: 13px;
+  }
+  .modal-footer {
+    padding: 10px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .highlight { background: #fef08a; border-radius: 2px; padding: 0 1px; }
+
+  /* ── Divider ── */
+  .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+  input[type="number"] { text-align: right; font-family: 'IBM Plex Mono', monospace; }
+  input[type="number"]::-webkit-inner-spin-button { opacity: 0.5; }
+
+  .tag-94 {
+    display: inline-block;
+    font-size: 10px;
+    background: var(--warning-light);
+    color: var(--warning);
+    border: 1px solid #fde68a;
+    border-radius: 3px;
+    padding: 1px 5px;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+
+  @media (max-width: 600px) {
+    header { padding: 0 16px; }
+    main { padding: 16px 12px 60px; }
+    .field-row { grid-template-columns: 110px 1fr; }
+    .section-body { padding: 14px; }
+    .income-item { padding: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <h1>📊 개인사업자 종합소득금액 계산기</h1>
+    <span class="subtitle">2025년 귀속</span>
+  </div>
+  <div class="header-right">
+    <div id="dataStatus" class="status-bar loading" style="margin:0;">
+      <span class="status-dot pulse"></span> 경비율 데이터 로딩 중...
+    </div>
+    <button class="btn-calc-all" onclick="calculateAll()">전체 계산</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- 일반사업(주택임대) -->
+  <div class="section-card" id="generalSection">
+    <div class="section-header" onclick="toggleSection('general')">
+      <div class="section-header-left">
+        <span class="section-badge badge-general">일</span>
+        <span class="section-title">일반사업 (주택임대 포함)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="section-income-preview" id="generalTotal">—</span>
+        <span class="section-toggle open" id="generalToggle">▲</span>
+      </div>
+    </div>
+    <div class="section-body" id="generalBody">
+      <!-- 기장의무 / 신고유형 -->
+      <div class="field-row">
+        <span class="field-label">기장의무</span>
+        <div class="radio-group" id="generalBookkeeping">
+          <label class="radio-btn active"><input type="radio" name="gen_bk" value="simplified" checked onchange="onBookkeepingChange('general')"> 간편장부</label>
+          <label class="radio-btn"><input type="radio" name="gen_bk" value="double" onchange="onBookkeepingChange('general')"> 복식부기</label>
+        </div>
+      </div>
+      <div class="field-row">
+        <span class="field-label">신고유형</span>
+        <div class="radio-group" id="generalReportType">
+          <label class="radio-btn active"><input type="radio" name="gen_rt" value="simple" checked onchange="onReportTypeChange('general')"> 단순율</label>
+          <label class="radio-btn"><input type="radio" name="gen_rt" value="standard" onchange="onReportTypeChange('general')"> 기준율</label>
+          <label class="radio-btn"><input type="radio" name="gen_rt" value="book" onchange="onReportTypeChange('general')"> 기장</label>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <!-- 업종 항목들 -->
+      <div class="income-items" id="generalItems"></div>
+      <button class="btn-add-item" onclick="addIncomeItem('general')">＋ 업종 추가</button>
+      <div class="divider"></div>
+      <!-- 합계 결과 -->
+      <div class="result-row">
+        <span class="result-label">일반사업 소득금액 합계</span>
+        <span class="result-value" id="generalResult">0 원</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 부동산임대 -->
+  <div class="section-card" id="realEstateSection">
+    <div class="section-header" onclick="toggleSection('realEstate')">
+      <div class="section-header-left">
+        <span class="section-badge badge-realestate">부</span>
+        <span class="section-title">부동산임대업</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="section-income-preview" id="realEstateTotal">—</span>
+        <span class="section-toggle open" id="realEstateToggle">▲</span>
+      </div>
+    </div>
+    <div class="section-body" id="realEstateBody">
+      <div class="field-row">
+        <span class="field-label">기장의무</span>
+        <div class="radio-group" id="realEstateBookkeeping">
+          <label class="radio-btn active"><input type="radio" name="re_bk" value="simplified" checked onchange="onBookkeepingChange('realEstate')"> 간편장부</label>
+          <label class="radio-btn"><input type="radio" name="re_bk" value="double" onchange="onBookkeepingChange('realEstate')"> 복식부기</label>
+        </div>
+      </div>
+      <div class="field-row">
+        <span class="field-label">신고유형</span>
+        <div class="radio-group" id="realEstateReportType">
+          <label class="radio-btn active"><input type="radio" name="re_rt" value="simple" checked onchange="onReportTypeChange('realEstate')"> 단순율</label>
+          <label class="radio-btn"><input type="radio" name="re_rt" value="standard" onchange="onReportTypeChange('realEstate')"> 기준율</label>
+          <label class="radio-btn"><input type="radio" name="re_rt" value="book" onchange="onReportTypeChange('realEstate')"> 기장</label>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="income-items" id="realEstateItems"></div>
+      <button class="btn-add-item" onclick="addIncomeItem('realEstate')">＋ 업종 추가</button>
+      <div class="divider"></div>
+      <div class="result-row">
+        <span class="result-label">부동산임대 소득금액 합계</span>
+        <span class="result-value" id="realEstateResult">0 원</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 종합소득금액 합산 -->
+  <div class="total-summary">
+    <h2>🧮 종합소득금액 합산</h2>
+    <div class="total-lines">
+      <div class="total-line">
+        <span class="total-line-label">일반사업 소득금액</span>
+        <span class="total-line-value" id="summaryGeneral">0 원</span>
+      </div>
+      <div class="total-line">
+        <span class="total-line-label">부동산임대 소득금액</span>
+        <span class="total-line-value" id="summaryRealEstate">0 원</span>
+      </div>
+      <div class="total-line grand">
+        <span class="total-line-label">종합소득금액 합계</span>
+        <span class="total-line-value" id="summaryTotal">0 원</span>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- 업종코드 검색 모달 -->
+<div class="modal-overlay" id="businessModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🔍 업종코드 검색</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-search">
+      <input type="text" id="businessSearch" placeholder="업종코드 또는 업태명, 세분류 검색..." oninput="searchBusiness(this.value)" autocomplete="off">
+    </div>
+    <div class="modal-list" id="businessList"></div>
+    <div class="modal-footer">
+      <span id="businessCount">0건</span>
+      <span>클릭하여 선택</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+// 1. 데이터 & 상태
+// ════════════════════════════════════════════════
+
+// Google Apps Script Web App URL (배포 후 이 URL을 교체하세요)
+// 아래는 Apps Script 배포 URL 예시입니다 — 실제 배포 URL로 교체해야 합니다
+const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+
+let expenseRateData = []; // [{code, category, name, simpleRate, simpleRateOver, standardRate}, ...]
+let dataLoaded = false;
+
+// 섹션별 상태
+const state = {
+  general: { bookkeeping: 'simplified', reportType: 'simple', items: [] },
+  realEstate: { bookkeeping: 'simplified', reportType: 'simple', items: [] },
+};
+
+let currentModalTarget = null; // { section, itemIndex }
+let modalCallback = null;
+
+// ════════════════════════════════════════════════
+// 2. 데이터 로드 (Apps Script / Fallback)
+// ════════════════════════════════════════════════
+
+async function loadExpenseRateData() {
+  try {
+    // Apps Script Web App에서 데이터 로드
+    const res = await fetch(APPS_SCRIPT_URL);
+    const json = await res.json();
+    if (json && json.data && Array.isArray(json.data)) {
+      expenseRateData = json.data.map(row => ({
+        year: row[0],
+        code: String(row[1]),
+        category: row[2],
+        name: row[3],
+        simpleRate: parseFloat(row[4]) || 0,
+        simpleRateOver: parseFloat(row[5]) || 0, // 초과율 (94* 코드)
+        standardRate: parseFloat(row[6]) || 0,
+      }));
+      setDataStatus('success', `경비율 데이터 로드 완료 (${expenseRateData.length}건)`);
+      dataLoaded = true;
+    } else {
+      throw new Error('데이터 형식 오류');
+    }
+  } catch (e) {
+    // Fallback: 샘플 데이터 (실제 Apps Script 연결 전 테스트용)
+    console.warn('Apps Script 연결 실패, 샘플 데이터 사용:', e.message);
+    loadFallbackData();
+  }
+}
+
+function loadFallbackData() {
+  // 스크린샷에서 확인된 일부 데이터 + 94* 코드 포함 샘플
+  expenseRateData = [
+    {year:2025,code:'11000',category:'농업,임업및어업',name:'곡물 및 기타 식량작물 재배업',simpleRate:0,simpleRateOver:0,standardRate:0},
+    {year:2025,code:'11001',category:'농업,임업및어업',name:'채소작물 재배업',simpleRate:93.5,simpleRateOver:93.5,standardRate:9.7},
+    {year:2025,code:'11002',category:'농업,임업및어업',name:'화훼작물 재배업',simpleRate:93.5,simpleRateOver:93.5,standardRate:4.3},
+    {year:2025,code:'12101',category:'농업,임업및어업',name:'육우 사육업',simpleRate:97.2,simpleRateOver:97.2,standardRate:7.8},
+    {year:2025,code:'12102',category:'농업,임업및어업',name:'말 및 양 사육업',simpleRate:91.8,simpleRateOver:91.8,standardRate:8},
+    {year:2025,code:'40101',category:'제조업',name:'음식료품 제조업',simpleRate:87.5,simpleRateOver:87.5,standardRate:12.5},
+    {year:2025,code:'52111',category:'도·소매업',name:'종합소매업',simpleRate:90.3,simpleRateOver:90.3,standardRate:18.9},
+    {year:2025,code:'75202',category:'숙박및음식점업',name:'한식 음식점업',simpleRate:91.4,simpleRateOver:91.4,standardRate:9.2},
+    {year:2025,code:'75211',category:'숙박및음식점업',name:'중식 음식점업',simpleRate:90.4,simpleRateOver:90.4,standardRate:10.1},
+    {year:2025,code:'75212',category:'숙박및음식점업',name:'일식 음식점업',simpleRate:90.3,simpleRateOver:90.3,standardRate:9.8},
+    {year:2025,code:'75213',category:'숙박및음식점업',name:'서양식 음식점업',simpleRate:89.5,simpleRateOver:89.5,standardRate:10.5},
+    {year:2025,code:'75290',category:'숙박및음식점업',name:'기타 음식점업',simpleRate:90.1,simpleRateOver:90.1,standardRate:9.3},
+    {year:2025,code:'75310',category:'숙박및음식점업',name:'주점업',simpleRate:90.5,simpleRateOver:90.5,standardRate:12.1},
+    {year:2025,code:'75320',category:'숙박및음식점업',name:'비알콜음료점업',simpleRate:89.9,simpleRateOver:89.9,standardRate:9.6},
+    {year:2025,code:'70112',category:'부동산업및임대업',name:'주거용 건물 임대업',simpleRate:42.6,simpleRateOver:42.6,standardRate:20.1},
+    {year:2025,code:'70121',category:'부동산업및임대업',name:'비주거용 건물 임대업',simpleRate:42.6,simpleRateOver:42.6,standardRate:19.5},
+    {year:2025,code:'70122',category:'부동산업및임대업',name:'기타 부동산 임대업',simpleRate:42.6,simpleRateOver:42.6,standardRate:19.5},
+    // 94* 코드 (인적용역) - 기본율/초과율 구분
+    {year:2025,code:'940100',category:'서비스업',name:'인적용역 제공업(일반)',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940901',category:'서비스업',name:'저술가',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940902',category:'서비스업',name:'화가 및 기타 시각예술가',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940903',category:'서비스업',name:'음악가 및 관련 예술가',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940904',category:'서비스업',name:'배우 및 관련 예술가',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940905',category:'서비스업',name:'만화가',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940906',category:'서비스업',name:'작곡가',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940907',category:'서비스업',name:'사진작가',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940908',category:'서비스업',name:'서적외판원',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940909',category:'서비스업',name:'강연·연설·방송 활동',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940910',category:'서비스업',name:'통·번역사',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940911',category:'서비스업',name:'직업운동가',simpleRate:80.2,simpleRateOver:70.0,standardRate:15.0},
+    {year:2025,code:'940912',category:'서비스업',name:'산업재해보험 손해사정인',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940913',category:'서비스업',name:'모델',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940914',category:'서비스업',name:'학원강사',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940915',category:'서비스업',name:'행사도우미',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940920',category:'서비스업',name:'기타 인적용역',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'85101',category:'교육서비스업',name:'초등학교',simpleRate:90.2,simpleRateOver:90.2,standardRate:14.7},
+    {year:2025,code:'85392',category:'교육서비스업',name:'학원(보습·논술·작문)',simpleRate:82.6,simpleRateOver:82.6,standardRate:12.3},
+    {year:2025,code:'74990',category:'전문과학및기술서비스업',name:'기타 전문서비스업',simpleRate:64.1,simpleRateOver:64.1,standardRate:15.5},
+  ];
+  dataLoaded = true;
+  setDataStatus('success', `샘플 데이터 로드 (${expenseRateData.length}건) — Apps Script URL 설정 필요`);
+}
+
+function setDataStatus(type, msg) {
+  const el = document.getElementById('dataStatus');
+  el.className = `status-bar ${type}`;
+  el.innerHTML = `<span class="status-dot${type==='loading'?' pulse':''}"></span> ${msg}`;
+}
+
+// ════════════════════════════════════════════════
+// 3. UI 생성 — 업종 항목
+// ════════════════════════════════════════════════
+
+let itemCounter = 0;
+
+function addIncomeItem(section) {
+  const idx = state[section].items.length;
+  const item = {
+    id: itemCounter++,
+    businessCode: '',
+    businessName: '',
+    businessCategory: '',
+    revenue: 0,
+    expenseBook: 0,  // 기장시 필요경비 직접입력
+    is94: false,
+  };
+  state[section].items.push(item);
+  renderItems(section);
+}
+
+function removeIncomeItem(section, idx) {
+  state[section].items.splice(idx, 1);
+  renderItems(section);
+  calculateSection(section);
+}
+
+function renderItems(section) {
+  const container = document.getElementById(`${section}Items`);
+  const reportType = state[section].reportType;
+  container.innerHTML = '';
+
+  state[section].items.forEach((item, idx) => {
+    const div = document.createElement('div');
+    div.className = 'income-item';
+    const is94 = item.businessCode && item.businessCode.startsWith('94');
+
+    div.innerHTML = `
+      <div class="income-item-header">
+        <span class="income-item-num">${idx + 1}</span>
+        <button class="btn-remove-item" onclick="removeIncomeItem('${section}', ${idx})">✕ 삭제</button>
+      </div>
+
+      <div class="field-row">
+        <span class="field-label">업종코드<span class="required">*</span></span>
+        <div class="business-input-wrap">
+          <span class="business-code-display" id="${section}_code_${idx}">${item.businessCode || '—'}</span>
+          <span class="business-name-display" id="${section}_name_${idx}" title="${item.businessName}">${item.businessName || '업종을 선택하세요'}</span>
+          <button class="btn-search-business" onclick="openModal('${section}', ${idx})">🔍 검색</button>
+        </div>
+      </div>
+
+      ${renderRateInfo(section, item, idx)}
+
+      <div class="field-row">
+        <span class="field-label">총수입금액<span class="required">*</span></span>
+        <div class="amount-input-wrap">
+          <input type="number" id="${section}_rev_${idx}" value="${item.revenue || ''}" placeholder="0"
+            oninput="onRevenueChange('${section}', ${idx}, this.value)" min="0" step="1000">
+          <span class="amount-unit">천원</span>
+        </div>
+      </div>
+
+      ${renderExpenseInput(section, item, idx, reportType)}
+
+      <div class="result-row" id="${section}_result_row_${idx}">
+        <span class="result-label">소득금액</span>
+        <span class="result-value" id="${section}_income_${idx}">—</span>
+      </div>
+      ${item.businessCode && item.businessCode.startsWith('94') && reportType !== 'book' ? `
+      <div class="expense-detail" id="${section}_detail_${idx}" style="display:none;"></div>
+      ` : ''}
+    `;
+    container.appendChild(div);
+    // 이미 선택된 업종이 있으면 계산
+    if (item.businessCode && item.revenue > 0) {
+      computeItem(section, idx);
+    }
+  });
+}
+
+function renderRateInfo(section, item, idx) {
+  const rt = state[section].reportType;
+  if (rt === 'book') return '';
+  if (!item.businessCode) return '';
+
+  const is94 = item.businessCode.startsWith('94');
+  let html = '<div class="field-row"><span class="field-label">경비율</span><div class="rate-display">';
+
+  if (rt === 'simple') {
+    html += `<div class="rate-badge simple"><span class="rate-badge-label">단순(일반)</span><span class="rate-badge-value">${item.simpleRate}%</span></div>`;
+    if (is94) {
+      html += `<div class="rate-badge simple"><span class="rate-badge-label">단순(초과)</span><span class="rate-badge-value">${item.simpleRateOver}%</span></div>`;
+      html += `<span class="rate-94-notice">⚠ 4천만원 초과분 초과율 적용</span>`;
+    }
+  } else {
+    html += `<div class="rate-badge standard"><span class="rate-badge-label">기준율</span><span class="rate-badge-value">${item.standardRate}%</span></div>`;
+  }
+  html += '</div></div>';
+  return html;
+}
+
+function renderExpenseInput(section, item, idx, reportType) {
+  if (reportType === 'book') {
+    return `
+      <div class="jangbu-section">
+        <div class="field-row" style="margin-bottom:0;">
+          <span class="field-label">필요경비<span class="required">*</span></span>
+          <div class="amount-input-wrap">
+            <input type="number" id="${section}_exp_${idx}" value="${item.expenseBook || ''}" placeholder="0"
+              oninput="onExpenseChange('${section}', ${idx}, this.value)" min="0" step="1000">
+            <span class="amount-unit">천원</span>
+          </div>
+        </div>
+      </div>`;
+  }
+  // 자동 계산 안내
+  if (!item.businessCode) return '';
+  return `<div class="field-row"><span class="field-label">필요경비</span><span style="font-size:12px;color:var(--text3);">총수입금액 입력 시 자동 계산</span></div>`;
+}
+
+// ════════════════════════════════════════════════
+// 4. 이벤트 핸들러
+// ════════════════════════════════════════════════
+
+function onBookkeepingChange(section) {
+  const val = document.querySelector(`input[name="${section === 'general' ? 'gen' : 're'}_bk"]:checked`)?.value;
+  if (val) state[section].bookkeeping = val;
+  updateRadioUI(`${section}Bookkeeping`, val);
+}
+
+function onReportTypeChange(section) {
+  const namePrefix = section === 'general' ? 'gen' : 're';
+  const val = document.querySelector(`input[name="${namePrefix}_rt"]:checked`)?.value;
+  if (val) {
+    state[section].reportType = val;
+    updateRadioUI(`${section}ReportType`, val);
+    renderItems(section);
+    calculateSection(section);
+  }
+}
+
+function updateRadioUI(groupId, selectedVal) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('.radio-btn').forEach(btn => {
+    const inp = btn.querySelector('input[type="radio"]');
+    btn.classList.toggle('active', inp && inp.value === selectedVal);
+  });
+}
+
+// Radio 변경 시 UI 동기화 (초기 렌더링 후 호출)
+function syncRadioUI() {
+  ['general', 'realEstate'].forEach(section => {
+    const bkName = section === 'general' ? 'gen_bk' : 're_bk';
+    const rtName = section === 'general' ? 'gen_rt' : 're_rt';
+    document.querySelectorAll(`input[name="${bkName}"]`).forEach(inp => {
+      inp.parentElement.classList.toggle('active', inp.checked);
+    });
+    document.querySelectorAll(`input[name="${rtName}"]`).forEach(inp => {
+      inp.parentElement.classList.toggle('active', inp.checked);
+    });
+  });
+}
+
+function onRevenueChange(section, idx, val) {
+  state[section].items[idx].revenue = parseFloat(val) || 0;
+  computeItem(section, idx);
+  calculateSection(section);
+}
+
+function onExpenseChange(section, idx, val) {
+  state[section].items[idx].expenseBook = parseFloat(val) || 0;
+  computeItem(section, idx);
+  calculateSection(section);
+}
+
+// ════════════════════════════════════════════════
+// 5. 계산 로직
+// ════════════════════════════════════════════════
+
+function computeItem(section, idx) {
+  const item = state[section].items[idx];
+  const rt = state[section].reportType;
+  const revenue = item.revenue; // 천원 단위
+
+  let expense = 0;
+  let income = 0;
+  let detail = '';
+
+  if (rt === 'book') {
+    expense = item.expenseBook || 0;
+    income = revenue - expense;
+  } else {
+    if (!item.businessCode) {
+      document.getElementById(`${section}_income_${idx}`).textContent = '업종 선택 필요';
+      return;
+    }
+
+    const is94 = item.businessCode.startsWith('94');
+
+    if (rt === 'simple') {
+      if (is94) {
+        // 94* : 4천만원(40,000천원)까지 일반율, 초과분은 초과율
+        const threshold = 40000; // 천원
+        if (revenue <= threshold) {
+          expense = revenue * (item.simpleRate / 100);
+          detail = `필요경비 = ${fmt(revenue)}천원 × ${item.simpleRate}% = ${fmt(Math.round(expense))}천원`;
+        } else {
+          const exp1 = threshold * (item.simpleRate / 100);
+          const exp2 = (revenue - threshold) * (item.simpleRateOver / 100);
+          expense = exp1 + exp2;
+          detail = `필요경비 = (40,000천원 × ${item.simpleRate}%) + (${fmt(revenue - threshold)}천원 × ${item.simpleRateOver}%)\n= ${fmt(Math.round(exp1))} + ${fmt(Math.round(exp2))} = ${fmt(Math.round(expense))}천원`;
+        }
+      } else {
+        expense = revenue * (item.simpleRate / 100);
+        detail = `필요경비 = ${fmt(revenue)}천원 × ${item.simpleRate}% = ${fmt(Math.round(expense))}천원`;
+      }
+    } else { // standard
+      expense = revenue * (item.standardRate / 100);
+      detail = `필요경비 = ${fmt(revenue)}천원 × ${item.standardRate}% = ${fmt(Math.round(expense))}천원`;
+    }
+    income = revenue - expense;
+  }
+
+  const incomeEl = document.getElementById(`${section}_income_${idx}`);
+  if (incomeEl) incomeEl.textContent = `${fmt(Math.round(income))} 천원`;
+
+  const detailEl = document.getElementById(`${section}_detail_${idx}`);
+  if (detailEl && detail) {
+    detailEl.style.display = '';
+    detailEl.textContent = detail;
+  }
+}
+
+function calculateSection(section) {
+  let total = 0;
+  state[section].items.forEach((item, idx) => {
+    const rt = state[section].reportType;
+    const revenue = item.revenue;
+    let income = 0;
+
+    if (rt === 'book') {
+      income = revenue - (item.expenseBook || 0);
+    } else {
+      if (!item.businessCode) return;
+      const is94 = item.businessCode.startsWith('94');
+      let expense = 0;
+      if (rt === 'simple') {
+        if (is94) {
+          const threshold = 40000;
+          if (revenue <= threshold) {
+            expense = revenue * (item.simpleRate / 100);
+          } else {
+            expense = threshold * (item.simpleRate / 100) + (revenue - threshold) * (item.simpleRateOver / 100);
+          }
+        } else {
+          expense = revenue * (item.simpleRate / 100);
+        }
+      } else {
+        expense = revenue * (item.standardRate / 100);
+      }
+      income = revenue - expense;
+    }
+    total += income;
+  });
+
+  const resultEl = document.getElementById(`${section}Result`);
+  const totalEl = document.getElementById(`${section}Total`);
+  if (resultEl) resultEl.textContent = `${fmt(Math.round(total))} 천원`;
+  if (totalEl) totalEl.textContent = `${fmt(Math.round(total))} 천원`;
+
+  updateSummary();
+}
+
+function calculateAll() {
+  ['general', 'realEstate'].forEach(section => {
+    state[section].items.forEach((_, idx) => computeItem(section, idx));
+    calculateSection(section);
+  });
+}
+
+function updateSummary() {
+  let gen = 0, re = 0;
+  ['general', 'realEstate'].forEach(section => {
+    const rt = state[section].reportType;
+    state[section].items.forEach(item => {
+      const revenue = item.revenue;
+      let income = 0;
+      if (rt === 'book') {
+        income = revenue - (item.expenseBook || 0);
+      } else {
+        if (!item.businessCode) return;
+        const is94 = item.businessCode.startsWith('94');
+        let expense = 0;
+        if (rt === 'simple') {
+          if (is94) {
+            const threshold = 40000;
+            expense = revenue <= threshold
+              ? revenue * (item.simpleRate / 100)
+              : threshold * (item.simpleRate / 100) + (revenue - threshold) * (item.simpleRateOver / 100);
+          } else {
+            expense = revenue * (item.simpleRate / 100);
+          }
+        } else {
+          expense = revenue * (item.standardRate / 100);
+        }
+        income = revenue - expense;
+      }
+      if (section === 'general') gen += income;
+      else re += income;
+    });
+  });
+  document.getElementById('summaryGeneral').textContent = `${fmt(Math.round(gen))} 천원`;
+  document.getElementById('summaryRealEstate').textContent = `${fmt(Math.round(re))} 천원`;
+  document.getElementById('summaryTotal').textContent = `${fmt(Math.round(gen + re))} 천원`;
+}
+
+function fmt(n) {
+  return n.toLocaleString('ko-KR');
+}
+
+// ════════════════════════════════════════════════
+// 6. 업종 검색 모달
+// ════════════════════════════════════════════════
+
+function openModal(section, idx) {
+  currentModalTarget = { section, idx };
+  document.getElementById('businessModal').classList.add('open');
+  document.getElementById('businessSearch').value = '';
+  renderModalList('');
+  setTimeout(() => document.getElementById('businessSearch').focus(), 100);
+}
+
+function closeModal() {
+  document.getElementById('businessModal').classList.remove('open');
+  currentModalTarget = null;
+}
+
+function searchBusiness(query) {
+  renderModalList(query.trim());
+}
+
+function renderModalList(query) {
+  const list = document.getElementById('businessList');
+  const q = query.toLowerCase();
+
+  let filtered = expenseRateData;
+  if (q) {
+    filtered = expenseRateData.filter(d =>
+      d.code.includes(q) ||
+      d.name.toLowerCase().includes(q) ||
+      d.category.toLowerCase().includes(q)
+    );
+  }
+
+  document.getElementById('businessCount').textContent = `${filtered.length}건`;
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="modal-empty">검색 결과가 없습니다.<br><small>업종코드 또는 세분류 키워드로 검색해 보세요</small></div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.slice(0, 200).map(d => {
+    const codeHl = q ? highlight(d.code, q) : d.code;
+    const nameHl = q ? highlight(d.name, q) : d.name;
+    const catHl = q ? highlight(d.category, q) : d.category;
+    const is94 = d.code.startsWith('94');
+    return `
+      <div class="modal-item" onclick="selectBusiness('${d.code}')">
+        <span class="modal-item-code">${codeHl}${is94 ? '<span class="tag-94">인적</span>' : ''}</span>
+        <span class="modal-item-name">${nameHl}</span>
+        <span class="modal-item-category">${catHl}</span>
+      </div>`;
+  }).join('');
+}
+
+function highlight(text, query) {
+  if (!query) return text;
+  const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return text.replace(re, '<span class="highlight">$1</span>');
+}
+
+function selectBusiness(code) {
+  if (!currentModalTarget) return;
+  const { section, idx } = currentModalTarget;
+  const found = expenseRateData.find(d => d.code === code);
+  if (!found) return;
+
+  state[section].items[idx].businessCode = found.code;
+  state[section].items[idx].businessName = found.name;
+  state[section].items[idx].businessCategory = found.category;
+  state[section].items[idx].simpleRate = found.simpleRate;
+  state[section].items[idx].simpleRateOver = found.simpleRateOver;
+  state[section].items[idx].standardRate = found.standardRate;
+  state[section].items[idx].is94 = found.code.startsWith('94');
+
+  closeModal();
+  renderItems(section);
+  computeItem(section, idx);
+  calculateSection(section);
+}
+
+// 모달 바깥 클릭 시 닫기
+document.getElementById('businessModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ════════════════════════════════════════════════
+// 7. 섹션 토글
+// ════════════════════════════════════════════════
+
+function toggleSection(section) {
+  const body = document.getElementById(`${section}Body`);
+  const toggle = document.getElementById(`${section}Toggle`);
+  body.classList.toggle('collapsed');
+  toggle.classList.toggle('open');
+}
+
+// ════════════════════════════════════════════════
+// 8. 초기화
+// ════════════════════════════════════════════════
+
+function init() {
+  // 기본 항목 1개씩 추가
+  addIncomeItem('general');
+  addIncomeItem('realEstate');
+  // 데이터 로드
+  loadExpenseRateData();
+}
+
+// 문서 준비 후 초기화
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════
+  APPS SCRIPT 설정 가이드 (이 주석을 참고하여 설정하세요)
+  ═══════════════════════════════════════════════════════════
+
+  1. Google Sheets > 확장 프로그램 > Apps Script 열기
+
+  2. 아래 코드를 붙여넣고 저장:
+
+  function doGet(e) {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('ExpenseRate');
+    var data = sheet.getDataRange().getValues();
+    // 헤더 제거
+    data.shift();
+    var result = { data: data };
+    return ContentService
+      .createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  3. 배포 > 새 배포 > 웹앱
+     - 실행 대상: 나
+     - 액세스 권한: 모든 사용자
+     클릭 후 URL 복사
+
+  4. 이 HTML 파일에서 아래 줄을 찾아 URL 교체:
+     const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+
+  주의: CORS 이슈 발생 시 doGet에 아래 추가:
+  var output = ContentService.createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+  return output;
+
+════════════════════════════════════════════════════════════ -->
+
+</body>
+</html>
