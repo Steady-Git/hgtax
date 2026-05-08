@@ -555,9 +555,9 @@ function buildRows(){
         <div class="sodk-cell">
           <button class="sodk-btn ${item.sodkType==='general'?'on-gen':''}"    onclick="setProp(${i},'sodkType','general')">일반사업</button>
           <button class="sodk-btn ${item.sodkType==='realEstate'?'on-re':''}"  onclick="setProp(${i},'sodkType','realEstate')">부동산임대</button>
-          <button class="sodk-btn ${item.sodkType==='wage'?'on-wage':''}"      onclick="setProp(${i},'sodkType','wage')">근로소득</button>
-          <button class="sodk-btn ${item.sodkType==='pension'?'on-pension':''}" onclick="setProp(${i},'sodkType','pension')">연금소득</button>
-          <button class="sodk-btn ${item.sodkType==='other'?'on-other':''}"    onclick="setProp(${i},'sodkType','other')">기타소득</button>
+          <button class="sodk-btn ${item.sodkType==='wage'?'on-wage':''}"      onclick="setProp(${i},'sodkType','wage')">근로</button>
+          <button class="sodk-btn ${item.sodkType==='pension'?'on-pension':''}" onclick="setProp(${i},'sodkType','pension')">연금</button>
+          <button class="sodk-btn ${item.sodkType==='other'?'on-other':''}"    onclick="setProp(${i},'sodkType','other')">기타</button>
         </div>`,
     },
     // 기장의무 (사업소득만 활성)
