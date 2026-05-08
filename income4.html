@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>개인사업자 종합소득금액 계산기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#eef0f5;
+  --surface:#fff;
+  --surface2:#f5f6fa;
+  --border:#dde2ea;
+  --border2:#b8bfcc;
+  --primary:#1a4fc4;
+  --pl:#e8eefb;
+  --pd:#1340a0;
+  --accent:#e8602c;
+  --al:#fdf0eb;
+  --text:#1a1d23;
+  --t2:#4a5060;
+  --t3:#8a909e;
+  --success:#16a34a;
+  --succ-l:#f0fdf4;
+  --warn:#d97706;
+  --warn-l:#fffbeb;
+  --danger:#dc2626;
+  --danger-l:#fef2f2;
+  /* 소득종류별 색상 */
+  --c-gen:#1a4fc4;    --bg-gen:#eef2ff;
+  --c-re:#e8602c;     --bg-re:#fff4ef;
+  --c-wage:#0d9488;   --bg-wage:#f0fdfa;
+  --c-pension:#7c3aed;--bg-pension:#f5f3ff;
+  --shadow:0 1px 4px rgba(0,0,0,.07),0 4px 16px rgba(0,0,0,.05);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.13);
+  --radius:12px;
+  --rsm:6px;
+  --lw:118px;
+  --cw:220px;
+  --rh:42px;
+  --rh-sodk:68px; /* 소득종류 행: 2행 버튼 높이 */
+  --rh-sel:48px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+
+/* Header */
+header{background:var(--primary);color:#fff;padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;box-shadow:0 2px 10px rgba(26,79,196,.4)}
+header h1{font-size:15px;font-weight:600;letter-spacing:-.3px}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.btn-all{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:var(--rsm);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-all:hover{background:rgba(255,255,255,.28)}
+.status{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:var(--rsm);font-size:11px}
+.status.loading{background:#fffbeb;color:var(--warn);border:1px solid #fde68a}
+.status.success{background:var(--succ-l);color:var(--success);border:1px solid #bbf7d0}
+.status.error{background:var(--danger-l);color:var(--danger);border:1px solid #fca5a5}
+.dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.dot.pulse{animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+main{padding:20px 16px 80px}
+
+/* Card */
+.card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.card-hd{padding:13px 18px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px}
+.card-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.card-hint{font-size:11px;color:var(--t3)}
+.card-body{padding:16px 18px}
+
+/* Table */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--rsm);border:1px solid var(--border)}
+.main-tbl{border-collapse:collapse;width:max-content;min-width:100%;table-layout:fixed}
+
+/* 라벨 셀 */
+.main-tbl .lc{width:var(--lw);min-width:var(--lw);padding:0 10px;font-size:11.5px;color:var(--t2);font-weight:600;background:var(--surface2);border-right:2px solid var(--border2);border-bottom:1px solid var(--border);vertical-align:middle;text-align:right;white-space:nowrap;height:var(--rh)}
+.lc.rh-sodk{height:var(--rh-sodk)}
+.lc.rh-sel{height:var(--rh-sel)}
+.lc .req{color:var(--accent)}
+
+/* 데이터 셀 */
+.main-tbl .dc{width:var(--cw);min-width:var(--cw);border-right:1px solid var(--border);border-bottom:1px solid var(--border);vertical-align:middle;padding:0;height:var(--rh);position:relative}
+.dc.rh-sodk{height:var(--rh-sodk)}
+.dc.rh-sel{height:var(--rh-sel)}
+.dc.bg-result{background:var(--pl)}
+.dc.bg-expense{background:#fffbf0}
+.dc.bg-detail{background:#fafafa;height:auto}
+.dc.bg-na{background:var(--surface2)} /* N/A 셀 */
+/* 소득종류별 배경 */
+.dc.sodk-gen{background:var(--bg-gen)}
+.dc.sodk-re{background:var(--bg-re)}
+.dc.sodk-wage{background:var(--bg-wage)}
+.dc.sodk-pension{background:var(--bg-pension)}
+
+/* 헤더 행 */
+.main-tbl th.th-lbl{width:var(--lw);min-width:var(--lw);background:#0e2e8a;color:rgba(255,255,255,.65);font-size:11px;font-weight:500;text-align:center;border-right:2px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.08);padding:10px 6px}
+.main-tbl th.th-col{width:var(--cw);min-width:var(--cw);color:#fff;text-align:center;border-right:1px solid rgba(255,255,255,.12);border-bottom:1px solid rgba(255,255,255,.08);padding:8px 8px 6px;vertical-align:top}
+/* 헤더 소득종류별 배경 */
+.th-gen{background:var(--c-gen)}
+.th-re{background:var(--c-re)}
+.th-wage{background:var(--c-wage)}
+.th-pension{background:var(--c-pension)}
+.col-num{font-size:18px;font-weight:700;display:block;line-height:1.2}
+.col-badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;margin-top:4px;background:rgba(255,255,255,.22);color:#fff}
+.btn-del-col{display:inline-block;margin-top:5px;background:none;border:1px solid rgba(255,255,255,.22);color:rgba(255,255,255,.65);font-size:10px;padding:2px 8px;border-radius:3px;cursor:pointer;font-family:inherit;transition:all .12s}
+.btn-del-col:hover{background:rgba(220,38,38,.55);border-color:transparent;color:#fff}
+
+/* 소득종류 선택 버튼 (2×2 그리드) */
+.sodk-cell{display:grid;grid-template-columns:1fr 1fr;gap:3px;height:var(--rh-sodk);padding:5px}
+.sodk-btn{text-align:center;padding:4px 3px;border-radius:4px;font-size:10.5px;font-weight:600;cursor:pointer;border:1.5px solid var(--border2);background:#fff;color:var(--t3);transition:all .12s;font-family:inherit;line-height:1.3}
+.sodk-btn:hover{border-color:var(--primary);color:var(--primary)}
+.sodk-btn.on-gen{background:var(--c-gen);border-color:var(--c-gen);color:#fff}
+.sodk-btn.on-re{background:var(--c-re);border-color:var(--c-re);color:#fff}
+.sodk-btn.on-wage{background:var(--c-wage);border-color:var(--c-wage);color:#fff}
+.sodk-btn.on-pension{background:var(--c-pension);border-color:var(--c-pension);color:#fff}
+
+/* 기장의무/신고유형 선택 버튼 */
+.sel-cell{display:flex;align-items:center;justify-content:center;gap:3px;height:var(--rh-sel);padding:4px 5px}
+.sel-btn{flex:1;text-align:center;padding:5px 3px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border2);background:#fff;color:var(--t3);transition:all .12s;font-family:inherit;line-height:1.3;white-space:nowrap}
+.sel-btn:hover{border-color:var(--primary);color:var(--primary)}
+.sel-btn.on{background:var(--primary);border-color:var(--primary);color:#fff}
+
+/* N/A 셀 내용 */
+.na-txt{display:flex;align-items:center;justify-content:center;height:100%;font-size:13px;color:var(--border2)}
+
+/* 업종 셀 */
+.biz-cell{display:flex;align-items:center;height:100%;padding:4px 6px;gap:4px}
+.biz-code{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;color:var(--primary);background:var(--pl);border-radius:3px;padding:1px 5px;flex-shrink:0;white-space:nowrap}
+.biz-name{font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.btn-biz{flex-shrink:0;background:var(--primary);color:#fff;border:none;border-radius:4px;font-size:11px;padding:3px 8px;cursor:pointer;font-family:inherit;transition:background .12s;white-space:nowrap}
+.btn-biz:hover{background:var(--pd)}
+
+/* 경비율 셀 */
+.rate-cell{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;height:100%;padding:4px 10px;gap:1px}
+.rate-v{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--primary)}
+.rate-v .rl{font-family:'Noto Sans KR',sans-serif;font-size:10px;color:var(--t3);font-weight:400;margin-right:2px}
+.rate-v.over{color:var(--warn)}
+.rate-none{font-size:11px;color:var(--t3);padding:0 10px}
+
+/* 숫자 입력 (contenteditable) */
+.num-inp{display:block;width:100%;height:100%;padding:0 10px;font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right;color:var(--text);outline:none;background:transparent;cursor:text;line-height:var(--rh);white-space:nowrap;overflow:hidden;caret-color:var(--primary)}
+.num-inp:focus{background:rgba(26,79,196,.04);box-shadow:inset 0 0 0 2px var(--primary)}
+.num-inp:empty::before{content:attr(data-ph);color:var(--t3);font-family:'Noto Sans KR',sans-serif;font-size:11px}
+
+/* 결과값 */
+.res-val{display:block;width:100%;height:100%;padding:0 10px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;text-align:right;color:var(--primary);line-height:var(--rh);white-space:nowrap}
+.res-val.neg{color:var(--danger)}
+
+/* 계산식 */
+.detail-txt{display:block;width:100%;padding:5px 9px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3);white-space:pre-wrap;line-height:1.6}
+
+/* 추가 버튼 */
+.btn-add{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;margin-top:12px;background:none;border:1.5px dashed var(--border2);border-radius:var(--rsm);color:var(--t3);font-family:inherit;font-size:13px;cursor:pointer;transition:all .15s}
+.btn-add:hover{border-color:var(--primary);color:var(--primary);background:var(--pl)}
+
+/* 소계 칩 (2×2 그리드) */
+.subtotal-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px}
+@media(max-width:560px){.subtotal-grid{grid-template-columns:1fr}}
+.subtotal-chip{background:var(--surface);border-radius:var(--rsm);border:1px solid var(--border);padding:11px 14px;display:flex;flex-direction:column;gap:3px;box-shadow:var(--shadow)}
+.chip-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle}
+.chip-label{font-size:11px;color:var(--t3);font-weight:500}
+.chip-val{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700}
+.cv-gen{color:var(--c-gen)}.cv-re{color:var(--c-re)}.cv-wage{color:var(--c-wage)}.cv-pension{color:var(--c-pension)}
+
+/* 종합소득금액 */
+.total-card{background:var(--surface);border:2px solid var(--primary);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow-lg)}
+.total-card h2{font-size:14px;font-weight:700;margin-bottom:14px}
+.total-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.total-row:last-child{border:none}
+.tr-label{color:var(--t2)}.tr-val{font-family:'IBM Plex Mono',monospace;font-weight:600}
+.total-row.grand{border-top:2px solid var(--primary);border-bottom:none;padding-top:12px;margin-top:4px}
+.total-row.grand .tr-label{font-size:15px;font-weight:700;color:var(--primary)}
+.total-row.grand .tr-val{font-size:22px;font-weight:700;color:var(--primary)}
+.tr-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
+
+/* Modal */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.modal-ov.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow-lg);width:100%;max-width:620px;max-height:82vh;display:flex;flex-direction:column;animation:mIn .18s ease}
+@keyframes mIn{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-hd{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:14px;font-weight:700}
+.modal-x{background:none;border:none;font-size:18px;color:var(--t3);cursor:pointer;padding:2px 5px;border-radius:4px}
+.modal-x:hover{background:var(--border)}
+.modal-search{padding:12px 18px;border-bottom:1px solid var(--border)}
+.modal-search input{font-family:inherit;font-size:13px;border:1px solid var(--border2);border-radius:var(--rsm);padding:8px 12px;width:100%;outline:none}
+.modal-search input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,79,196,.1)}
+.modal-list{overflow-y:auto;flex:1}
+.modal-item{display:flex;align-items:center;padding:9px 18px;gap:10px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s}
+.modal-item:hover{background:var(--pl)}
+.mi-code{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--primary);flex-shrink:0;width:72px}
+.mi-name{font-size:12px;color:var(--t2);flex:1}
+.mi-cat{font-size:11px;color:var(--t3);flex-shrink:0;max-width:110px;text-align:right}
+.modal-empty{padding:36px 18px;text-align:center;color:var(--t3);font-size:13px}
+.modal-ft{padding:8px 18px;border-top:1px solid var(--border);font-size:11px;color:var(--t3);display:flex;justify-content:space-between}
+.hl{background:#fef08a;border-radius:2px}
+.tag94{display:inline-block;font-size:9px;background:var(--warn-l);color:var(--warn);border:1px solid #fde68a;border-radius:3px;padding:0 4px;margin-left:3px;vertical-align:middle}
+
+@media(max-width:540px){
+  :root{--lw:90px;--cw:165px}
+  header h1{font-size:13px}
+  main{padding:12px 8px 80px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:10px">
+    <h1>📊 개인사업자 종합소득금액 계산기</h1>
+    <span style="font-size:11px;opacity:.65">2025년 귀속</span>
+  </div>
+  <div class="hdr-right">
+    <div id="dataStatus" class="status loading"><span class="dot pulse"></span><span>데이터 로딩 중...</span></div>
+    <button class="btn-all" onclick="calculateAll()">전체 계산</button>
+  </div>
+</header>
+
+<main>
+  <div class="card">
+    <div class="card-hd">
+      <span class="card-title">📋 소득 입력</span>
+      <span class="card-hint">소득별로 종류를 선택하고 금액을 입력하세요</span>
+    </div>
+    <div class="card-body">
+      <div class="tbl-wrap"><table class="main-tbl" id="mainTbl"></table></div>
+      <button class="btn-add" onclick="addItem()">＋ 소득 추가</button>
+      <div class="subtotal-grid">
+        <div class="subtotal-chip">
+          <span class="chip-label"><span class="chip-dot" style="background:var(--c-gen)"></span>일반사업 소득금액</span>
+          <span class="chip-val cv-gen" id="subGen">0</span>
+        </div>
+        <div class="subtotal-chip">
+          <span class="chip-label"><span class="chip-dot" style="background:var(--c-re)"></span>부동산임대 소득금액</span>
+          <span class="chip-val cv-re" id="subRe">0</span>
+        </div>
+        <div class="subtotal-chip">
+          <span class="chip-label"><span class="chip-dot" style="background:var(--c-wage)"></span>근로 소득금액</span>
+          <span class="chip-val cv-wage" id="subWage">0</span>
+        </div>
+        <div class="subtotal-chip">
+          <span class="chip-label"><span class="chip-dot" style="background:var(--c-pension)"></span>연금 소득금액</span>
+          <span class="chip-val cv-pension" id="subPension">0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="total-card">
+    <h2>🧮 종합소득금액 합산</h2>
+    <div class="total-row">
+      <span class="tr-label"><span class="tr-dot" style="background:var(--c-gen)"></span>일반사업 소득금액</span>
+      <span class="tr-val" id="sumGen">0</span>
+    </div>
+    <div class="total-row">
+      <span class="tr-label"><span class="tr-dot" style="background:var(--c-re)"></span>부동산임대 소득금액</span>
+      <span class="tr-val" id="sumRe">0</span>
+    </div>
+    <div class="total-row">
+      <span class="tr-label"><span class="tr-dot" style="background:var(--c-wage)"></span>근로 소득금액</span>
+      <span class="tr-val" id="sumWage">0</span>
+    </div>
+    <div class="total-row">
+      <span class="tr-label"><span class="tr-dot" style="background:var(--c-pension)"></span>연금 소득금액</span>
+      <span class="tr-val" id="sumPension">0</span>
+    </div>
+    <div class="total-row grand">
+      <span class="tr-label">종합소득금액 합계</span>
+      <span class="tr-val" id="sumTotal">0</span>
+    </div>
+  </div>
+</main>
+
+<!-- 업종 검색 모달 -->
+<div class="modal-ov" id="bizModal">
+  <div class="modal">
+    <div class="modal-hd">
+      <span class="modal-title">🔍 업종코드 검색</span>
+      <button class="modal-x" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-search">
+      <input type="text" id="bizSearch" placeholder="업종코드 또는 업태명, 세분류 검색..." oninput="renderModalList(this.value.trim())" autocomplete="off">
+    </div>
+    <div class="modal-list" id="bizList"></div>
+    <div class="modal-ft"><span id="bizCount">0건</span><span>클릭하여 선택</span></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// 1. 상수 & 전역 상태
+// ═══════════════════════════════════════════
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxqW4DIBnQtznugt8RwjEA-5-0Gt3-t-ItkY4h5F__wMqaNoVACOv9NOs4M40427j0C/exec';
+
+// 소득종류 메타정보
+const SODK = {
+  general:    { label:'일반사업',   thCls:'th-gen',     bgCls:'sodk-gen',     onCls:'on-gen'     },
+  realEstate: { label:'부동산임대', thCls:'th-re',      bgCls:'sodk-re',      onCls:'on-re'      },
+  wage:       { label:'근로소득',   thCls:'th-wage',    bgCls:'sodk-wage',    onCls:'on-wage'    },
+  pension:    { label:'연금소득',   thCls:'th-pension', bgCls:'sodk-pension', onCls:'on-pension' },
+};
+// 사업소득 여부
+const isBiz    = t => t === 'general' || t === 'realEstate';
+const isNonBiz = t => t === 'wage'   || t === 'pension';
+
+let rateData = [];
+let modalIdx = null;
+let uid = 0;
+let items = [];
+
+// ═══════════════════════════════════════════
+// 2. 숫자 포매팅
+// ═══════════════════════════════════════════
+const fmt = n => (!n || isNaN(n)) ? '0' : Math.round(n).toLocaleString('ko-KR');
+function getRaw(el) { return parseFloat((el.textContent||'').replace(/,/g,''))||0; }
+function moveCE(el) { const r=document.createRange(),s=window.getSelection(); r.selectNodeContents(el); r.collapse(false); s.removeAllRanges(); s.addRange(r); }
+
+function onNumKeydown(e) {
+  const ok=['Backspace','Delete','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Tab','Enter','Home','End'];
+  if(ok.includes(e.key)||e.ctrlKey||e.metaKey) return;
+  if(!/^\d$/.test(e.key)) e.preventDefault();
+}
+
+function onNumInput(el, idx, field) {
+  let dBefore=0;
+  const sel=window.getSelection();
+  if(sel.rangeCount){
+    const r=sel.getRangeAt(0).cloneRange();
+    r.selectNodeContents(el);
+    r.setEnd(sel.getRangeAt(0).endContainer,sel.getRangeAt(0).endOffset);
+    dBefore=r.toString().replace(/,/g,'').length;
+  }
+  const raw=el.textContent.replace(/,/g,'').replace(/\D/g,'');
+  const num=parseFloat(raw)||0;
+  const formatted=num?fmt(num):'';
+  el.textContent=formatted;
+  if(formatted&&el.firstChild){
+    let dc=0,off=0;
+    for(let i=0;i<formatted.length;i++){
+      if(formatted[i]!==',') dc++;
+      off=i+1;
+      if(dc>=dBefore) break;
+    }
+    try{
+      const r2=document.createRange(),s2=window.getSelection();
+      r2.setStart(el.firstChild,Math.min(off,formatted.length));
+      r2.collapse(true);s2.removeAllRanges();s2.addRange(r2);
+    }catch(_){}
+  }
+  if(field==='revenue') items[idx].revenue=num;
+  else                  items[idx].expenseBook=num;
+  computeItem(idx); updateTotals();
+}
+
+function onNumBlur(el){ const n=getRaw(el); el.textContent=n?fmt(n):''; }
+
+function handlePaste(e,el,idx,field){
+  e.preventDefault();
+  const txt=(e.clipboardData||window.clipboardData).getData('text');
+  const num=parseFloat(txt.replace(/,/g,''))||0;
+  el.textContent=num?fmt(num):'';
+  if(field==='revenue') items[idx].revenue=num;
+  else items[idx].expenseBook=num;
+  moveCE(el); computeItem(idx); updateTotals();
+}
+
+// ═══════════════════════════════════════════
+// 3. 근로소득공제 계산
+//    총급여 → 공제액 (한도 2,000만원)
+// ═══════════════════════════════════════════
+function calcWageDeduction(w) {
+  let d, detail;
+  if (w <= 5_000_000) {
+    d = w * 0.70;
+    detail = `${fmt(w)} × 70% = ${fmt(Math.round(d))}`;
+  } else if (w <= 15_000_000) {
+    d = 3_500_000 + (w - 5_000_000) * 0.40;
+    detail = `3,500,000 + (${fmt(w)} - 5,000,000) × 40% = ${fmt(Math.round(d))}`;
+  } else if (w <= 45_000_000) {
+    d = 7_500_000 + (w - 15_000_000) * 0.15;
+    detail = `7,500,000 + (${fmt(w)} - 15,000,000) × 15% = ${fmt(Math.round(d))}`;
+  } else if (w <= 100_000_000) {
+    d = 12_000_000 + (w - 45_000_000) * 0.05;
+    detail = `12,000,000 + (${fmt(w)} - 45,000,000) × 5% = ${fmt(Math.round(d))}`;
+  } else {
+    d = 14_750_000 + (w - 100_000_000) * 0.02;
+    detail = `14,750,000 + (${fmt(w)} - 100,000,000) × 2% = ${fmt(Math.round(d))}`;
+  }
+  if (d > 20_000_000) { detail += `\n→ 한도 20,000,000 적용`; d = 20_000_000; }
+  return { deduction: Math.round(d), detail };
+}
+
+// ═══════════════════════════════════════════
+// 4. 연금소득공제 계산
+//    총연금액 → 공제액 (한도 9,000만원)
+// ═══════════════════════════════════════════
+function calcPensionDeduction(p) {
+  let d, detail;
+  if (p <= 3_500_000) {
+    d = p;
+    detail = `총연금액 전액 = ${fmt(Math.round(d))}`;
+  } else if (p <= 7_000_000) {
+    d = 3_500_000 + (p - 3_500_000) * 0.40;
+    detail = `3,500,000 + (${fmt(p)} - 3,500,000) × 40% = ${fmt(Math.round(d))}`;
+  } else if (p <= 14_000_000) {
+    d = 4_900_000 + (p - 7_000_000) * 0.20;
+    detail = `4,900,000 + (${fmt(p)} - 7,000,000) × 20% = ${fmt(Math.round(d))}`;
+  } else {
+    d = 6_300_000 + (p - 14_000_000) * 0.10;
+    detail = `6,300,000 + (${fmt(p)} - 14,000,000) × 10% = ${fmt(Math.round(d))}`;
+  }
+  if (d > 9_000_000) { detail += `\n→ 한도 9,000,000 적용`; d = 9_000_000; }
+  return { deduction: Math.round(d), detail };
+}
+
+// ═══════════════════════════════════════════
+// 5. 데이터 로드
+// ═══════════════════════════════════════════
+async function loadData() {
+  try {
+    const res=await fetch(APPS_SCRIPT_URL);
+    const json=await res.json();
+    if(json?.data&&Array.isArray(json.data)){
+      rateData=json.data.map(r=>({
+        year:r[0],code:String(r[1]),category:r[2],name:r[3],
+        simpleRate:parseFloat(r[4])||0,
+        simpleRateOver:parseFloat(r[5])||0,
+        standardRate:parseFloat(r[6])||0,
+      }));
+      setStatus('success',`경비율 ${rateData.length}건 로드 완료`);
+    } else throw new Error('형식 오류');
+  } catch(e){
+    console.warn('Apps Script 실패:', e.message);
+    loadFallback();
+  }
+}
+
+function loadFallback(){
+  rateData=[
+    {year:2025,code:'11000',category:'농업,임업및어업',name:'곡물 및 기타 식량작물 재배업',simpleRate:0,simpleRateOver:0,standardRate:0},
+    {year:2025,code:'11001',category:'농업,임업및어업',name:'채소작물 재배업',simpleRate:93.5,simpleRateOver:93.5,standardRate:9.7},
+    {year:2025,code:'11002',category:'농업,임업및어업',name:'화훼작물 재배업',simpleRate:93.5,simpleRateOver:93.5,standardRate:4.3},
+    {year:2025,code:'12101',category:'농업,임업및어업',name:'육우 사육업',simpleRate:97.2,simpleRateOver:97.2,standardRate:7.8},
+    {year:2025,code:'40101',category:'제조업',name:'음식료품 제조업',simpleRate:87.5,simpleRateOver:87.5,standardRate:12.5},
+    {year:2025,code:'52111',category:'도·소매업',name:'종합소매업',simpleRate:90.3,simpleRateOver:90.3,standardRate:18.9},
+    {year:2025,code:'75202',category:'숙박및음식점업',name:'한식 음식점업',simpleRate:91.4,simpleRateOver:91.4,standardRate:9.2},
+    {year:2025,code:'75211',category:'숙박및음식점업',name:'중식 음식점업',simpleRate:90.4,simpleRateOver:90.4,standardRate:10.1},
+    {year:2025,code:'75212',category:'숙박및음식점업',name:'일식 음식점업',simpleRate:90.3,simpleRateOver:90.3,standardRate:9.8},
+    {year:2025,code:'75213',category:'숙박및음식점업',name:'서양식 음식점업',simpleRate:89.5,simpleRateOver:89.5,standardRate:10.5},
+    {year:2025,code:'75290',category:'숙박및음식점업',name:'기타 음식점업',simpleRate:90.1,simpleRateOver:90.1,standardRate:9.3},
+    {year:2025,code:'75310',category:'숙박및음식점업',name:'주점업',simpleRate:90.5,simpleRateOver:90.5,standardRate:12.1},
+    {year:2025,code:'75320',category:'숙박및음식점업',name:'비알콜음료점업',simpleRate:89.9,simpleRateOver:89.9,standardRate:9.6},
+    {year:2025,code:'70112',category:'부동산업및임대업',name:'주거용 건물 임대업',simpleRate:42.6,simpleRateOver:42.6,standardRate:20.1},
+    {year:2025,code:'70121',category:'부동산업및임대업',name:'비주거용 건물 임대업',simpleRate:42.6,simpleRateOver:42.6,standardRate:19.5},
+    {year:2025,code:'70122',category:'부동산업및임대업',name:'기타 부동산 임대업',simpleRate:42.6,simpleRateOver:42.6,standardRate:19.5},
+    {year:2025,code:'940100',category:'서비스업',name:'인적용역 제공업(일반)',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940901',category:'서비스업',name:'저술가',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940902',category:'서비스업',name:'화가 및 기타 시각예술가',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940903',category:'서비스업',name:'음악가 및 관련 예술가',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940904',category:'서비스업',name:'배우 및 관련 예술가',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940905',category:'서비스업',name:'만화가',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940906',category:'서비스업',name:'작곡가',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940907',category:'서비스업',name:'사진작가',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940908',category:'서비스업',name:'서적외판원',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940909',category:'서비스업',name:'강연·연설·방송 활동',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940910',category:'서비스업',name:'통·번역사',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940911',category:'서비스업',name:'직업운동가',simpleRate:80.2,simpleRateOver:70.0,standardRate:15.0},
+    {year:2025,code:'940912',category:'서비스업',name:'산업재해보험 손해사정인',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940913',category:'서비스업',name:'모델',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940914',category:'서비스업',name:'학원강사',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940915',category:'서비스업',name:'행사도우미',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'940920',category:'서비스업',name:'기타 인적용역',simpleRate:75.0,simpleRateOver:65.0,standardRate:20.0},
+    {year:2025,code:'85101',category:'교육서비스업',name:'초등학교',simpleRate:90.2,simpleRateOver:90.2,standardRate:14.7},
+    {year:2025,code:'85392',category:'교육서비스업',name:'학원(보습·논술·작문)',simpleRate:82.6,simpleRateOver:82.6,standardRate:12.3},
+    {year:2025,code:'74990',category:'전문과학및기술서비스업',name:'기타 전문서비스업',simpleRate:64.1,simpleRateOver:64.1,standardRate:15.5},
+  ];
+  setStatus('success',`샘플 데이터 ${rateData.length}건 로드`);
+}
+
+function setStatus(type,msg){
+  const el=document.getElementById('dataStatus');
+  el.className=`status ${type}`;
+  el.innerHTML=`<span class="dot${type==='loading'?' pulse':''}"></span><span>${msg}</span>`;
+}
+
+// ═══════════════════════════════════════════
+// 6. 아이템 관리
+// ═══════════════════════════════════════════
+function addItem(){
+  items.push({
+    _id:uid++,
+    sodkType:'general',
+    bookkeeping:'simplified',
+    reportType:'simple',
+    businessCode:'',businessName:'',businessCategory:'',
+    simpleRate:0,simpleRateOver:0,standardRate:0,
+    revenue:0,expenseBook:0,
+    income:0,expense:0,detail:'',is94:false,
+  });
+  renderTable();
+}
+
+function removeItem(idx){
+  items.splice(idx,1);
+  renderTable();
+  updateTotals();
+}
+
+// ═══════════════════════════════════════════
+// 7. 테이블 렌더링
+// ═══════════════════════════════════════════
+function renderTable(){
+  const tbl=document.getElementById('mainTbl');
+  if(items.length===0){ tbl.innerHTML=''; updateTotals(); return; }
+
+  // colgroup
+  let cg=`<colgroup><col style="width:var(--lw);min-width:var(--lw)">`;
+  items.forEach(()=>{ cg+=`<col style="width:var(--cw);min-width:var(--cw)">`; });
+  cg+='</colgroup>';
+
+  // thead: 소득종류별 색상 헤더
+  let thead='<thead><tr><th class="th-lbl">항목</th>';
+  items.forEach((item,i)=>{
+    const m=SODK[item.sodkType];
+    thead+=`<th class="th-col ${m.thCls}">
+      <span class="col-num">${i+1}</span>
+      <span class="col-badge">${m.label}</span>
+      <div><button class="btn-del-col" onclick="removeItem(${i})">✕ 삭제</button></div>
+    </th>`;
+  });
+  thead+='</tr></thead>';
+
+  // tbody rows
+  const rows=buildRows();
+  let tbody='<tbody>';
+  rows.forEach(row=>{
+    const lcCls=row.lcExtra||'';
+    tbody+=`<tr><td class="lc ${lcCls}">${row.label}</td>`;
+    items.forEach((item,i)=>{
+      const dc=typeof row.dcCls==='function'?row.dcCls(item):(row.dcCls||'');
+      tbody+=`<td class="dc ${dc}">${row.render(item,i)}</td>`;
+    });
+    tbody+='</tr>';
+  });
+  tbody+='</tbody>';
+
+  tbl.innerHTML=cg+thead+tbody;
+
+  // 기존 입력값 복원
+  items.forEach((item,i)=>{
+    const re=document.getElementById(`rev_${i}`);
+    if(re&&item.revenue) re.textContent=fmt(item.revenue);
+    if(isBiz(item.sodkType)&&item.reportType==='book'){
+      const ex=document.getElementById(`exp_${i}`);
+      if(ex&&item.expenseBook) ex.textContent=fmt(item.expenseBook);
+    }
+    updateItemDOM(i);
+  });
+}
+
+// ── 행 정의 ──────────────────────────────
+function buildRows(){
+  return [
+    // 소득종류 (2×2 그리드)
+    {
+      label:'소득종류', lcExtra:'rh-sodk',
+      dcCls:item=>`rh-sodk ${SODK[item.sodkType].bgCls}`,
+      render:(item,i)=>`
+        <div class="sodk-cell">
+          <button class="sodk-btn ${item.sodkType==='general'?'on-gen':''}"    onclick="setProp(${i},'sodkType','general')">일반사업</button>
+          <button class="sodk-btn ${item.sodkType==='realEstate'?'on-re':''}"  onclick="setProp(${i},'sodkType','realEstate')">부동산임대</button>
+          <button class="sodk-btn ${item.sodkType==='wage'?'on-wage':''}"      onclick="setProp(${i},'sodkType','wage')">근로소득</button>
+          <button class="sodk-btn ${item.sodkType==='pension'?'on-pension':''}" onclick="setProp(${i},'sodkType','pension')">연금소득</button>
+        </div>`,
+    },
+    // 기장의무 (사업소득만 활성)
+    {
+      label:'기장의무', lcExtra:'rh-sel',
+      dcCls:item=>isNonBiz(item.sodkType)?'rh-sel bg-na':'rh-sel',
+      render:(item,i)=>{
+        if(isNonBiz(item.sodkType)) return `<div class="na-txt">—</div>`;
+        return `<div class="sel-cell">
+          <button class="sel-btn ${item.bookkeeping==='simplified'?'on':''}" onclick="setProp(${i},'bookkeeping','simplified')">간편장부</button>
+          <button class="sel-btn ${item.bookkeeping==='double'?'on':''}"     onclick="setProp(${i},'bookkeeping','double')">복식부기</button>
+        </div>`;
+      },
+    },
+    // 신고유형 (사업소득만 활성)
+    {
+      label:'신고유형', lcExtra:'rh-sel',
+      dcCls:item=>isNonBiz(item.sodkType)?'rh-sel bg-na':'rh-sel',
+      render:(item,i)=>{
+        if(isNonBiz(item.sodkType)) return `<div class="na-txt">—</div>`;
+        return `<div class="sel-cell">
+          <button class="sel-btn ${item.reportType==='simple'?'on':''}"   onclick="setProp(${i},'reportType','simple')">단순율</button>
+          <button class="sel-btn ${item.reportType==='standard'?'on':''}" onclick="setProp(${i},'reportType','standard')">기준율</button>
+          <button class="sel-btn ${item.reportType==='book'?'on':''}"     onclick="setProp(${i},'reportType','book')">기장</button>
+        </div>`;
+      },
+    },
+    // 업종코드 (사업소득만 활성)
+    {
+      label:'업종코드<span class="req">*</span>',
+      dcCls:item=>isNonBiz(item.sodkType)?'bg-na':'',
+      render:(item,i)=>{
+        if(isNonBiz(item.sodkType)) return `<div class="na-txt">—</div>`;
+        return `<div class="biz-cell">
+          ${item.businessCode
+            ?`<span class="biz-code">${item.businessCode}</span><span class="biz-name" title="${item.businessName}">${item.businessName}</span>`
+            :`<span class="biz-name" style="color:var(--t3)">—</span>`}
+          <button class="btn-biz" onclick="openModal(${i})">검색</button>
+        </div>`;
+      },
+    },
+    // 경비율 (사업소득만 활성)
+    {
+      label:'경비율',
+      dcCls:item=>isNonBiz(item.sodkType)?'bg-na':'',
+      render:(item,i)=>{
+        if(isNonBiz(item.sodkType)) return `<div class="na-txt">—</div>`;
+        if(item.reportType==='book'||!item.businessCode) return `<span class="rate-none">—</span>`;
+        const is94=item.businessCode.startsWith('94');
+        if(item.reportType==='simple'){
+          return `<div class="rate-cell">
+            <span class="rate-v"><span class="rl">${is94?'일반':'단순'}</span>${item.simpleRate}%</span>
+            ${is94?`<span class="rate-v over"><span class="rl">초과</span>${item.simpleRateOver}%</span>`:''}
+          </div>`;
+        }
+        return `<div class="rate-cell"><span class="rate-v"><span class="rl">기준</span>${item.standardRate}%</span></div>`;
+      },
+    },
+    // 총수입금액 (공통, 플레이스홀더만 다름)
+    {
+      label:'총수입금액<span class="req">*</span>',
+      dcCls:()=>'',
+      render:(item,i)=>{
+        const ph=item.sodkType==='wage'?'총급여액':item.sodkType==='pension'?'총연금액':'0';
+        return `<div contenteditable="true" class="num-inp" id="rev_${i}" data-ph="${ph}"
+          onkeydown="onNumKeydown(event)"
+          oninput="onNumInput(this,${i},'revenue')"
+          onblur="onNumBlur(this)"
+          onpaste="handlePaste(event,this,${i},'revenue')"></div>`;
+      },
+    },
+    // 필요경비 / 소득공제금액 (소득종류에 따라 라벨·내용 다름)
+    {
+      label:'필요경비<br><span style="font-weight:400;color:var(--t3);font-size:10px">(근로·연금: 공제금액)</span>',
+      dcCls:item=>{
+        if(isNonBiz(item.sodkType)) return 'bg-expense'; // 공제금액 자동
+        return item.reportType==='book'?'bg-expense':'';
+      },
+      render:(item,i)=>{
+        if(isNonBiz(item.sodkType)){
+          // 근로/연금: 자동 계산 표시 (읽기 전용)
+          return `<span class="res-val" id="exp_${i}" style="color:var(--t2);font-weight:600">—</span>`;
+        }
+        if(item.reportType==='book'){
+          return `<div contenteditable="true" class="num-inp" id="exp_${i}" data-ph="직접 입력"
+            onkeydown="onNumKeydown(event)"
+            oninput="onNumInput(this,${i},'expense')"
+            onblur="onNumBlur(this)"
+            onpaste="handlePaste(event,this,${i},'expense')"></div>`;
+        }
+        return `<span class="res-val" id="exp_${i}" style="color:var(--t2);font-weight:500">—</span>`;
+      },
+    },
+    // 소득금액
+    {
+      label:'소득금액',
+      dcCls:()=>'bg-result',
+      render:(item,i)=>`<span class="res-val" id="inc_${i}">—</span>`,
+    },
+    // 계산식
+    {
+      label:'계산식',
+      dcCls:()=>'bg-detail',
+      render:(item,i)=>`<span class="detail-txt" id="dtl_${i}"></span>`,
+    },
+  ];
+}
+
+// ═══════════════════════════════════════════
+// 8. 속성 변경
+// ═══════════════════════════════════════════
+function setProp(idx,prop,val){
+  items[idx][prop]=val;
+  if(prop==='reportType'){ items[idx].income=0; items[idx].expense=0; items[idx].detail=''; }
+  if(prop==='sodkType'&&isNonBiz(val)){
+    // 근로/연금으로 변경 시 사업 관련 필드 초기화
+    items[idx].businessCode=''; items[idx].businessName='';
+    items[idx].income=0; items[idx].expense=0; items[idx].detail='';
+  }
+  renderTable();
+  items.forEach((item,i)=>{
+    const re=document.getElementById(`rev_${i}`);
+    if(re&&item.revenue) re.textContent=fmt(item.revenue);
+    if(isBiz(item.sodkType)&&item.reportType==='book'){
+      const ex=document.getElementById(`exp_${i}`);
+      if(ex&&item.expenseBook) ex.textContent=fmt(item.expenseBook);
+    }
+    computeItem(i);
+  });
+  updateTotals();
+}
+
+// ═══════════════════════════════════════════
+// 9. 계산 로직
+// ═══════════════════════════════════════════
+function computeItem(idx){
+  const item=items[idx];
+  const {sodkType,reportType:rt,revenue,expenseBook,businessCode}=item;
+  let expense=0,income=0,detail='';
+
+  if(sodkType==='wage'){
+    // 근로소득: 총급여 → 근로소득공제 → 근로소득금액
+    if(revenue>0){
+      const r=calcWageDeduction(revenue);
+      expense=r.deduction; detail=r.detail;
+    }
+    income=revenue-expense;
+
+  } else if(sodkType==='pension'){
+    // 연금소득: 총연금액 → 연금소득공제 → 연금소득금액
+    if(revenue>0){
+      const r=calcPensionDeduction(revenue);
+      expense=r.deduction; detail=r.detail;
+    }
+    income=revenue-expense;
+
+  } else {
+    // 사업소득 (일반/부동산임대)
+    if(rt==='book'){
+      expense=expenseBook||0;
+      income=revenue-expense;
+    } else {
+      if(!businessCode){ item.expense=0;item.income=0;item.detail=''; updateItemDOM(idx); return; }
+      const is94=businessCode.startsWith('94');
+      const THR=40_000_000;
+      if(rt==='simple'){
+        if(is94&&revenue>THR){
+          const e1=THR*(item.simpleRate/100);
+          const e2=(revenue-THR)*(item.simpleRateOver/100);
+          expense=e1+e2;
+          detail=`(40,000,000 × ${item.simpleRate}%) + (${fmt(revenue-THR)} × ${item.simpleRateOver}%)\n= ${fmt(Math.round(e1))} + ${fmt(Math.round(e2))} = ${fmt(Math.round(expense))}`;
+        } else {
+          expense=revenue*(item.simpleRate/100);
+          detail=`${fmt(revenue)} × ${item.simpleRate}% = ${fmt(Math.round(expense))}`;
+        }
+      } else {
+        expense=revenue*(item.standardRate/100);
+        detail=`${fmt(revenue)} × ${item.standardRate}% = ${fmt(Math.round(expense))}`;
+      }
+      income=revenue-expense;
+    }
+  }
+
+  item.expense=expense; item.income=income; item.detail=detail;
+  updateItemDOM(idx);
+}
+
+function updateItemDOM(idx){
+  const item=items[idx];
+  const rt=item.reportType;
+  const st=item.sodkType;
+
+  const incEl=document.getElementById(`inc_${idx}`);
+  if(incEl){
+    incEl.textContent=fmt(Math.round(item.income));
+    incEl.className=`res-val${item.income<0?' neg':''}`;
+  }
+  const expEl=document.getElementById(`exp_${idx}`);
+  if(expEl){
+    if(isNonBiz(st)){
+      // 근로/연금: 공제금액 표시
+      expEl.textContent=item.revenue>0?fmt(Math.round(item.expense)):'—';
+    } else if(rt!=='book'){
+      expEl.textContent=(item.businessCode&&item.revenue)?fmt(Math.round(item.expense)):'—';
+    }
+  }
+  const dtlEl=document.getElementById(`dtl_${idx}`);
+  if(dtlEl) dtlEl.textContent=item.detail||'';
+}
+
+function calculateAll(){ items.forEach((_,i)=>computeItem(i)); updateTotals(); }
+
+function updateTotals(){
+  const s={general:0,realEstate:0,wage:0,pension:0};
+  items.forEach(item=>{ s[item.sodkType]=(s[item.sodkType]||0)+item.income; });
+  const f=n=>fmt(Math.round(n));
+  document.getElementById('subGen').textContent     =f(s.general);
+  document.getElementById('subRe').textContent      =f(s.realEstate);
+  document.getElementById('subWage').textContent    =f(s.wage);
+  document.getElementById('subPension').textContent =f(s.pension);
+  document.getElementById('sumGen').textContent     =f(s.general);
+  document.getElementById('sumRe').textContent      =f(s.realEstate);
+  document.getElementById('sumWage').textContent    =f(s.wage);
+  document.getElementById('sumPension').textContent =f(s.pension);
+  document.getElementById('sumTotal').textContent   =f(s.general+s.realEstate+s.wage+s.pension);
+}
+
+// ═══════════════════════════════════════════
+// 10. 업종 검색 모달
+// ═══════════════════════════════════════════
+function openModal(idx){
+  modalIdx=idx;
+  document.getElementById('bizModal').classList.add('open');
+  document.getElementById('bizSearch').value='';
+  renderModalList('');
+  setTimeout(()=>document.getElementById('bizSearch').focus(),80);
+}
+function closeModal(){ document.getElementById('bizModal').classList.remove('open'); modalIdx=null; }
+
+function renderModalList(query){
+  const list=document.getElementById('bizList');
+  const q=query.toLowerCase();
+  const filtered=q?rateData.filter(d=>d.code.includes(q)||d.name.toLowerCase().includes(q)||d.category.toLowerCase().includes(q)):rateData;
+  document.getElementById('bizCount').textContent=`${filtered.length}건`;
+  if(!filtered.length){ list.innerHTML=`<div class="modal-empty">검색 결과가 없습니다.</div>`; return; }
+  const hl=t=>q?t.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`,'gi'),'<span class="hl">$1</span>'):t;
+  list.innerHTML=filtered.slice(0,300).map(d=>{
+    const is94=d.code.startsWith('94');
+    return `<div class="modal-item" onclick="selectBiz('${d.code}')">
+      <span class="mi-code">${hl(d.code)}${is94?'<span class="tag94">인적</span>':''}</span>
+      <span class="mi-name">${hl(d.name)}</span>
+      <span class="mi-cat">${hl(d.category)}</span>
+    </div>`;
+  }).join('');
+}
+
+function selectBiz(code){
+  if(modalIdx===null) return;
+  const found=rateData.find(d=>d.code===code);
+  if(!found) return;
+  const idx=modalIdx;
+  Object.assign(items[idx],{
+    businessCode:found.code,businessName:found.name,businessCategory:found.category,
+    simpleRate:found.simpleRate,simpleRateOver:found.simpleRateOver,standardRate:found.standardRate,
+    is94:found.code.startsWith('94'),
+  });
+  closeModal();
+  renderTable();
+  items.forEach((item,i)=>{
+    const re=document.getElementById(`rev_${i}`);
+    if(re&&item.revenue) re.textContent=fmt(item.revenue);
+    if(isBiz(item.sodkType)&&item.reportType==='book'){
+      const ex=document.getElementById(`exp_${i}`);
+      if(ex&&item.expenseBook) ex.textContent=fmt(item.expenseBook);
+    }
+    computeItem(i);
+  });
+  updateTotals();
+}
+
+document.getElementById('bizModal').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeModal(); });
+
+// ═══════════════════════════════════════════
+// 11. 초기화
+// ═══════════════════════════════════════════
+function init(){ addItem(); loadData(); }
+document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
+</script>
+</body>
+</html>
