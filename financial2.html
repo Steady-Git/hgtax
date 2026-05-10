@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>기업 재무정보 조회</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #1f2d47;
+    --accent: #00d4aa;
+    --accent2: #4f8ef7;
+    --red: #ff4f6b;
+    --yellow: #f59e0b;
+    --text: #e2e8f0;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { overflow-x:clip; max-width:100%; }
+  body { background:var(--bg); color:var(--text); font-family:'Noto Sans KR',sans-serif; min-height:100vh; }
+  body::before {
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:linear-gradient(rgba(0,212,170,0.03) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(0,212,170,0.03) 1px,transparent 1px);
+    background-size:40px 40px;
+  }
+  /* Header */
+  .header {
+    position:sticky; top:0; z-index:100;
+    background:var(--surface); border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center; height:52px; gap:10px;
+  }
+  .header-logo { font-size:15px; font-weight:900; letter-spacing:1px; color:var(--accent); }
+  .header-sub  { font-size:11px; color:var(--text-muted); }
+  /* Wrapper */
+  .wrapper { position:relative; z-index:1; max-width:960px; margin:0 auto; padding:32px 20px 80px; }
+  /* Intro */
+  .intro { margin-bottom:28px; }
+  .badge-live {
+    display:inline-flex; align-items:center; gap:6px;
+    background:rgba(0,212,170,0.1); border:1px solid rgba(0,212,170,0.3);
+    border-radius:20px; padding:4px 14px; font-size:11px; color:var(--accent);
+    letter-spacing:1.2px; text-transform:uppercase; margin-bottom:14px; font-weight:600;
+  }
+  .badge-live::before {
+    content:''; width:6px; height:6px; border-radius:50%;
+    background:var(--accent); box-shadow:0 0 8px var(--accent);
+    animation:pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .intro h1 { font-size:clamp(20px,4vw,32px); font-weight:900; letter-spacing:-0.8px; line-height:1.2; margin-bottom:8px; }
+  .intro h1 span { color:var(--accent); }
+  .intro p { color:var(--text-muted); font-size:13px; font-weight:300; }
+  /* Card */
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:16px; margin-bottom:24px; overflow:hidden; }
+  .card-title {
+    padding:18px 24px; border-bottom:1px solid var(--border);
+    font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase;
+    color:var(--text-muted); display:flex; align-items:center; justify-content:space-between;
+  }
+  /* Search form */
+  .search-form { padding:28px 24px; display:flex; flex-direction:column; gap:16px; }
+  .search-input-wrap { position:relative; }
+  .search-input-row  { display:flex; gap:10px; }
+  /* Dropdown */
+  .stock-dropdown {
+    display:none; position:absolute; top:calc(100% + 6px); left:0; right:0;
+    background:var(--surface2); border:1px solid var(--accent); border-radius:12px;
+    z-index:9999; box-shadow:0 16px 48px rgba(0,0,0,0.65); max-height:300px; overflow-y:auto;
+  }
+  .stock-dropdown.show { display:block; }
+  .stock-dropdown::-webkit-scrollbar { width:5px; }
+  .stock-dropdown::-webkit-scrollbar-thumb { background:var(--border); border-radius:6px; }
+  .dropdown-count {
+    padding:8px 16px; font-size:11px; color:var(--text-muted);
+    background:var(--surface); border-bottom:1px solid var(--border);
+    letter-spacing:0.3px; position:sticky; top:0;
+  }
+  .dropdown-item {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 16px; cursor:pointer; border-bottom:1px solid var(--border);
+    transition:background 0.15s; gap:12px;
+  }
+  .dropdown-item:last-child { border-bottom:none; }
+  .dropdown-item:hover { background:rgba(0,212,170,0.08); }
+  .dropdown-item-name { font-weight:700; font-size:14px; color:var(--text); flex:1; min-width:0; word-break:keep-all; }
+  .dropdown-item-meta { display:flex; align-items:center; gap:7px; flex-shrink:0; }
+  .dropdown-item-code { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-muted); }
+  .dropdown-item-mkt {
+    font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px;
+    background:rgba(79,142,247,0.12); color:var(--accent2); border:1px solid rgba(79,142,247,0.25);
+  }
+  .dropdown-loading {
+    padding:20px 16px; text-align:center; color:var(--text-muted); font-size:13px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .dropdown-spinner {
+    width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--accent);
+    border-radius:50%; animation:spin 0.7s linear infinite; flex-shrink:0;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  /* Chip */
+  .selected-chip {
+    display:none; align-items:center; gap:10px;
+    background:rgba(0,212,170,0.08); border:1px solid rgba(0,212,170,0.3);
+    border-radius:10px; padding:10px 16px;
+  }
+  .selected-chip.show { display:flex; }
+  .chip-name { font-weight:700; font-size:15px; color:var(--text); }
+  .chip-code { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-muted); }
+  .chip-mkt  {
+    font-size:10px; font-weight:700; padding:2px 8px; border-radius:4px;
+    background:rgba(79,142,247,0.12); color:var(--accent2); border:1px solid rgba(79,142,247,0.2);
+  }
+  .chip-corp { font-size:10px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
+  .chip-clear {
+    margin-left:auto; background:none; border:none; color:var(--text-muted);
+    cursor:pointer; font-size:18px; line-height:1; padding:2px 4px; border-radius:4px; transition:color 0.2s;
+  }
+  .chip-clear:hover { color:var(--red); }
+  /* Options */
+  .options-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media(max-width:600px) { .options-row { grid-template-columns:1fr; } }
+  .field label {
+    display:block; font-size:11px; font-weight:700; letter-spacing:0.8px;
+    text-transform:uppercase; color:var(--text-muted); margin-bottom:8px;
+  }
+  .field select, .field input {
+    width:100%; background:var(--bg); border:1px solid var(--border); border-radius:10px;
+    padding:11px 14px; color:var(--text); font-size:13px;
+    font-family:'Noto Sans KR',sans-serif; outline:none; transition:border-color 0.2s;
+    appearance:none; -webkit-appearance:none;
+  }
+  .field select:focus, .field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,212,170,0.1); }
+  .select-wrap { position:relative; }
+  .select-wrap::after {
+    content:'▾'; position:absolute; right:14px; top:50%; transform:translateY(-50%);
+    color:var(--text-muted); pointer-events:none; font-size:14px;
+  }
+  /* Pills */
+  .stmt-pills { display:flex; flex-wrap:wrap; gap:8px; }
+  .stmt-pill {
+    padding:8px 16px; border-radius:8px; border:1px solid var(--border);
+    background:transparent; color:var(--text-muted); font-size:12px; font-weight:600;
+    cursor:pointer; font-family:'Noto Sans KR',sans-serif; transition:all 0.2s; white-space:nowrap;
+  }
+  .stmt-pill:hover { border-color:var(--accent); color:var(--accent); }
+  .stmt-pill.active { background:rgba(0,212,170,0.12); border-color:rgba(0,212,170,0.5); color:var(--accent); font-weight:700; }
+  /* Buttons */
+  .btn {
+    background:var(--accent); color:#000; border:none; border-radius:10px;
+    padding:12px 22px; font-size:13px; font-weight:700; cursor:pointer;
+    transition:all 0.2s; white-space:nowrap; font-family:'Noto Sans KR',sans-serif; height:44px;
+  }
+  .btn:hover { background:#00f0c0; transform:translateY(-1px); box-shadow:0 8px 24px rgba(0,212,170,0.3); }
+  .btn:active { transform:translateY(0); }
+  .btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+  .btn-full { width:100%; height:48px; font-size:15px; border-radius:12px; }
+  /* API mode pills */
+  .api-pills { display:flex; gap:8px; flex-wrap:wrap; }
+  .api-pill {
+    padding:8px 18px; border-radius:8px; border:1px solid var(--border);
+    background:transparent; color:var(--text-muted); font-size:12px; font-weight:600;
+    cursor:pointer; font-family:'Noto Sans KR',sans-serif; transition:all 0.2s;
+  }
+  .api-pill:hover { border-color:var(--accent2); color:var(--accent2); }
+  .api-pill.active { background:rgba(79,142,247,0.12); border-color:rgba(79,142,247,0.4); color:var(--accent2); font-weight:700; }
+  /* Notice */
+  .notice {
+    padding:14px 18px; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25);
+    border-radius:10px; color:var(--yellow); font-size:12px; line-height:1.7;
+  }
+  .notice strong { font-weight:700; }
+  /* Loading */
+  .loading-box { display:none; padding:48px; text-align:center; color:var(--text-muted); flex-direction:column; align-items:center; gap:12px; }
+  .loading-box.show { display:flex; }
+  .loading-spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.9s linear infinite; }
+  .loading-step { font-size:11px; color:var(--text-muted); }
+  /* Error */
+  .error-box {
+    display:none; margin:0 24px 24px; padding:16px 20px;
+    background:rgba(255,79,107,0.08); border:1px solid rgba(255,79,107,0.25);
+    border-radius:12px; color:var(--red); font-size:13px; gap:10px; align-items:flex-start; line-height:1.6;
+  }
+  .error-box.show { display:flex; }
+  /* Result */
+  .result-panel { display:none; }
+  .result-panel.show { display:block; }
+  .company-header { display:none; padding:24px; border-bottom:1px solid var(--border); }
+  .company-header.show { display:block; }
+  .company-name { font-size:22px; font-weight:900; letter-spacing:-0.5px; color:var(--text); margin-bottom:6px; }
+  .company-meta { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .company-code { font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--text-muted); }
+  .company-mkt {
+    font-size:10px; font-weight:700; padding:2px 8px; border-radius:4px;
+    background:rgba(79,142,247,0.12); color:var(--accent2); border:1px solid rgba(79,142,247,0.2);
+  }
+  .company-period { font-size:12px; color:var(--text-muted); margin-top:4px; }
+  /* Summary grid */
+  .summary-grid { display:grid; grid-template-columns:repeat(2,1fr); }
+  @media(min-width:600px) { .summary-grid { grid-template-columns:repeat(4,1fr); } }
+  .summary-item { padding:20px 18px; border-right:1px solid var(--border); border-bottom:1px solid var(--border); min-width:0; }
+  .summary-label { font-size:10px; text-transform:uppercase; letter-spacing:0.8px; color:var(--text-muted); font-weight:700; margin-bottom:8px; word-break:keep-all; }
+  .summary-val   { font-size:clamp(12px,3vw,17px); font-weight:900; font-family:'JetBrains Mono',monospace; letter-spacing:-0.5px; word-break:break-all; }
+  .summary-unit  { font-size:11px; color:var(--text-muted); margin-top:3px; }
+  /* Section tabs */
+  .section-tabs { display:flex; border-bottom:1px solid var(--border); overflow-x:auto; scrollbar-width:none; }
+  .section-tabs::-webkit-scrollbar { display:none; }
+  .section-tab {
+    padding:13px 20px; font-size:12px; font-weight:600; color:var(--text-muted);
+    cursor:pointer; white-space:nowrap; border-bottom:2px solid transparent; margin-bottom:-1px;
+    transition:all 0.2s; background:none; border-left:none; border-right:none; border-top:none;
+    font-family:'Noto Sans KR',sans-serif;
+  }
+  .section-tab:hover { color:var(--text); }
+  .section-tab.active { color:var(--accent); border-bottom-color:var(--accent); font-weight:700; }
+  .section-content { display:none; }
+  .section-content.active { display:block; }
+  /* Table */
+  .fin-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .fin-table-wrap::-webkit-scrollbar { height:5px; }
+  .fin-table-wrap::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; min-width:540px; }
+  th {
+    background:var(--surface2); padding:12px 16px; text-align:right;
+    font-weight:700; font-size:11px; letter-spacing:0.5px; color:var(--text-muted);
+    border-bottom:1px solid var(--border); white-space:nowrap;
+  }
+  th:first-child { text-align:left; }
+  td {
+    padding:12px 16px; border-bottom:1px solid rgba(31,45,71,0.6);
+    font-family:'JetBrains Mono',monospace; font-size:12px; text-align:right;
+    white-space:nowrap; vertical-align:middle; color:var(--text-dim);
+  }
+  td:first-child {
+    text-align:left; font-family:'Noto Sans KR',sans-serif;
+    font-size:13px; font-weight:500; color:var(--text); white-space:normal; word-break:keep-all;
+  }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(255,255,255,0.018); }
+  .td-group {
+    font-size:11px !important; font-weight:700 !important; color:var(--text-muted) !important;
+    text-transform:uppercase; letter-spacing:0.8px !important;
+    background:rgba(0,0,0,0.25) !important; padding:8px 16px !important;
+    font-family:'Noto Sans KR',sans-serif !important; white-space:nowrap !important;
+  }
+  .td-total { font-weight:700 !important; color:var(--text) !important; }
+  .td-indent { padding-left:36px !important; color:var(--text-dim) !important; font-size:12px !important; }
+  .pos { color:var(--red) !important; }
+  .neg { color:var(--accent2) !important; }
+  .table-note { padding:12px 20px; font-size:11px; color:var(--text-muted); text-align:right; border-top:1px solid var(--border); }
+  /* Status */
+  .status-pill { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700; }
+  .status-dart { background:rgba(0,212,170,0.1); border:1px solid rgba(0,212,170,0.3); color:var(--accent); }
+  .status-demo { background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); color:var(--yellow); }
+  /* Toast */
+  .toast {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px);
+    background:var(--surface2); border:1px solid var(--accent); border-radius:10px;
+    padding:12px 24px; font-size:13px; font-weight:600; color:var(--text);
+    z-index:9999; transition:transform 0.3s ease; white-space:nowrap; pointer-events:none;
+  }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="header-logo">📊 FinStat</span>
+  <span class="header-sub">기업 재무정보 조회</span>
+</div>
+
+<div class="wrapper">
+
+  <div class="intro">
+    <div class="badge-live">DART Open API · 금융감독원</div>
+    <h1>기업 <span>재무정보</span> 조회</h1>
+    <p>종목을 검색하고 원하는 재무제표와 기간을 선택하세요</p>
+  </div>
+
+  <!-- 검색 카드 -->
+  <div class="card">
+    <div class="card-title">🔍 종목 검색 및 조회 설정</div>
+    <div class="search-form">
+
+      <div class="field">
+        <label>종목명 또는 종목코드</label>
+        <div class="search-input-wrap">
+          <div class="search-input-row">
+            <input type="text" id="stockSearchInput"
+              placeholder="예: 삼성전자, 카카오, 005930 입력 후 검색 버튼 클릭"
+              style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color 0.2s;"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+            <button class="btn" id="stockSearchBtn" onclick="searchStock()">🔍 검색</button>
+          </div>
+          <div class="stock-dropdown" id="stockDropdown"></div>
+        </div>
+      </div>
+
+      <div class="selected-chip" id="selectedChip">
+        <span class="chip-name" id="chipName"></span>
+        <span class="chip-code" id="chipCode"></span>
+        <span class="chip-mkt"  id="chipMkt"></span>
+        <span class="chip-corp" id="chipCorp"></span>
+        <button class="chip-clear" onclick="clearSelected()">✕</button>
+      </div>
+
+      <div class="field">
+        <label>재무제표 종류</label>
+        <div class="stmt-pills">
+          <button class="stmt-pill active" data-type="all"     onclick="selectStmt(this)">전체</button>
+          <button class="stmt-pill"        data-type="bs"      onclick="selectStmt(this)">재무상태표</button>
+          <button class="stmt-pill"        data-type="is"      onclick="selectStmt(this)">손익계산서</button>
+          <button class="stmt-pill"        data-type="cf"      onclick="selectStmt(this)">현금흐름표</button>
+          <button class="stmt-pill"        data-type="summary" onclick="selectStmt(this)">요약재무제표</button>
+        </div>
+      </div>
+
+      <div class="options-row">
+        <div class="field">
+          <label>결산 유형</label>
+          <div class="select-wrap">
+            <select id="reprtCode">
+              <option value="11011">사업보고서 (연간)</option>
+              <option value="11012">반기보고서</option>
+              <option value="11013">1분기보고서</option>
+              <option value="11014">3분기보고서</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>사업연도</label>
+          <div class="select-wrap">
+            <select id="bsnsYear"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>연결 / 별도</label>
+        <div class="stmt-pills">
+          <button class="stmt-pill active" data-fs="CFS" onclick="selectFs(this)">연결재무제표 (CFS)</button>
+          <button class="stmt-pill"        data-fs="OFS" onclick="selectFs(this)">별도재무제표 (OFS)</button>
+        </div>
+      </div>
+
+      <button class="btn btn-full" id="fetchBtn" onclick="fetchFinancial()">재무정보 조회</button>
+    </div>
+  </div>
+
+  <!-- 모드 카드 -->
+  <div class="card">
+    <div class="card-title">⚙️ 조회 모드</div>
+    <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px;">
+      <div class="api-pills">
+        <button class="api-pill active" id="modeDart" onclick="setMode('dart')">DART Open API (실데이터)</button>
+        <button class="api-pill"        id="modeDemo" onclick="setMode('demo')">데모 모드 (샘플)</button>
+      </div>
+      <div class="notice" id="modeNotice">
+        <strong>DART Open API</strong> 실데이터를 조회합니다. DART는 CORS 제한이 있어
+        <strong>allorigins.win 프록시</strong>를 경유합니다. 프록시 불안정 시 잠시 후 재시도하거나
+        <strong>데모 모드</strong>를 사용하세요.
+      </div>
+    </div>
+  </div>
+
+  <!-- 결과 카드 -->
+  <div class="card result-panel" id="resultPanel">
+
+    <div class="company-header" id="companyHeader">
+      <div class="company-name" id="companyName"></div>
+      <div class="company-meta">
+        <span class="company-code" id="companyCode"></span>
+        <span class="company-mkt"  id="companyMkt"></span>
+        <span id="dataSourceBadge"></span>
+      </div>
+      <div class="company-period" id="companyPeriod"></div>
+    </div>
+
+    <div class="summary-grid"  id="summaryGrid"></div>
+    <div class="section-tabs"  id="sectionTabs"></div>
+    <div id="sectionContents"></div>
+
+    <div class="loading-box" id="loadingBox">
+      <div class="loading-spinner"></div>
+      <span>재무정보를 불러오는 중...</span>
+      <span class="loading-step" id="loadingStep"></span>
+    </div>
+
+    <div class="error-box" id="errorBox">
+      <span style="flex-shrink:0">⚠️</span>
+      <div id="errorMsg"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════ API KEYS & CONSTANTS ═══════════════ */
+const FSS_API_KEY  = 'dc8294cd0177c5d51b45be29652fb691c4b18e055f22c87b0967ca1a78c7df0a';
+const DART_API_KEY = '6079afb4a352faee1343813dbaea10848c55d8c7';
+const FSS_STOCK_URL = 'https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo';
+const DART_BASE     = 'https://opendart.fss.or.kr/api';
+
+// CORS 프록시 (DART API는 브라우저에서 직접 호출 불가 → 프록시 경유)
+function proxyURL(url) {
+  return `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+}
+
+/* ═══════════════ STATE ═══════════════ */
+let selectedStock = null;   // { name, code, market, corpCode }
+let selectedStmt  = 'all';
+let selectedFs    = 'CFS';
+let apiMode       = 'dart';
+
+/* ═══════════════ INIT ═══════════════ */
+(function() {
+  const sel = document.getElementById('bsnsYear');
+  const yr  = new Date().getFullYear();
+  for (let y = yr; y >= yr - 7; y--) {
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y + '년';
+    if (y === yr - 1) opt.selected = true;
+    sel.appendChild(opt);
+  }
+})();
+
+/* ═══════════════ MODE ═══════════════ */
+function setMode(m) {
+  apiMode = m;
+  document.getElementById('modeDart').classList.toggle('active', m === 'dart');
+  document.getElementById('modeDemo').classList.toggle('active', m === 'demo');
+  document.getElementById('modeNotice').innerHTML = m === 'dart'
+    ? '<strong>DART Open API</strong> 실데이터를 조회합니다. DART는 CORS 제한이 있어 <strong>allorigins.win 프록시</strong>를 경유합니다. 프록시 불안정 시 잠시 후 재시도하거나 <strong>데모 모드</strong>를 사용하세요.'
+    : '⚠️ <strong>데모 모드</strong>: 실제 재무데이터가 아닌 <strong>샘플 데이터</strong>를 표시합니다.';
+}
+
+function selectStmt(btn) {
+  document.querySelectorAll('.stmt-pill[data-type]').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  selectedStmt = btn.dataset.type;
+}
+
+function selectFs(btn) {
+  document.querySelectorAll('.stmt-pill[data-fs]').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  selectedFs = btn.dataset.fs;
+}
+
+/* ═══════════════ STOCK SEARCH — 버튼 클릭 / Enter 키만 동작 ═══════════════ */
+document.getElementById('stockSearchInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); searchStock(); }
+  if (e.key === 'Escape') closeDropdown();
+});
+
+// 외부 클릭 시 드롭다운 닫기
+document.addEventListener('click', function(e) {
+  const wrap = document.querySelector('.search-input-wrap');
+  if (wrap && !wrap.contains(e.target)) closeDropdown();
+});
+
+function closeDropdown() {
+  document.getElementById('stockDropdown').classList.remove('show');
+}
+
+async function searchStock() {
+  const q = document.getElementById('stockSearchInput').value.trim();
+  if (!q) { showToast('종목명 또는 코드를 입력하세요', 'var(--red)'); return; }
+
+  const dd  = document.getElementById('stockDropdown');
+  const btn = document.getElementById('stockSearchBtn');
+  dd.innerHTML = '<div class="dropdown-loading"><div class="dropdown-spinner"></div> 검색 중...</div>';
+  dd.classList.add('show');
+  btn.disabled = true;
+
+  try {
+    const params = { serviceKey: FSS_API_KEY, resultType: 'json', numOfRows: 50, pageNo: 1 };
+    if (/^\d{6}$/.test(q)) params.likeSrtnCd = q;
+    else params.likeItmsNm = q;
+
+    const resp = await fetch(FSS_STOCK_URL + '?' + new URLSearchParams(params));
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const json = await resp.json();
+
+    const items = json?.response?.body?.items?.item;
+    const total = parseInt(json?.response?.body?.totalCount || 0);
+
+    if (!items || total === 0) {
+      dd.innerHTML = '<div class="dropdown-loading">검색 결과가 없습니다.</div>';
+      return;
+    }
+
+    const list = Array.isArray(items) ? items : [items];
+    const seen = new Map();
+    list.forEach(it => {
+      if (!seen.has(it.srtnCd) || it.basDt > seen.get(it.srtnCd).basDt) seen.set(it.srtnCd, it);
+    });
+    const uniq = [...seen.values()];
+
+    dd.innerHTML = '<div class="dropdown-count">검색 결과 ' + uniq.length + '건 — 종목을 선택하세요</div>' +
+      uniq.map(function(it) {
+        var name = it.itmsNm.replace(/'/g, "&#39;");
+        return '<div class="dropdown-item" onclick="selectStockItem(\'' + name + '\',\'' + it.srtnCd + '\',\'' + (it.mrktCtg||'') + '\')">'
+          + '<span class="dropdown-item-name">' + it.itmsNm + '</span>'
+          + '<span class="dropdown-item-meta">'
+          + '<span class="dropdown-item-code">' + it.srtnCd + '</span>'
+          + (it.mrktCtg ? '<span class="dropdown-item-mkt">' + it.mrktCtg + '</span>' : '')
+          + '</span></div>';
+      }).join('');
+
+  } catch(e) {
+    dd.innerHTML = '<div class="dropdown-loading">⚠️ 검색 실패: ' + e.message + '</div>';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function selectStockItem(name, code, market) {
+  closeDropdown();
+  document.getElementById('stockSearchInput').value = '';
+
+  // DART 고유번호 사전 조회 (없으면 나중에 재시도)
+  let corpCode = '';
+  try {
+    corpCode = await getDartCorpCode(code);
+  } catch(e) {
+    console.warn('corpCode 사전 조회 실패 (조회 시 재시도):', e.message);
+  }
+
+  selectedStock = { name, code, market, corpCode };
+  document.getElementById('chipName').textContent  = name;
+  document.getElementById('chipCode').textContent  = code;
+  document.getElementById('chipMkt').textContent   = market;
+  document.getElementById('chipCorp').textContent  = corpCode ? '(DART: ' + corpCode + ')' : '';
+  document.getElementById('selectedChip').classList.add('show');
+  showToast(name + ' 선택됨');
+}
+
+function clearSelected() {
+  selectedStock = null;
+  document.getElementById('selectedChip').classList.remove('show');
+  document.getElementById('stockSearchInput').value = '';
+  document.getElementById('stockSearchInput').focus();
+}
+
+/* ═══════════════ DART CORP CODE 조회 ═══════════════ */
+async function getDartCorpCode(stockCode) {
+  // DART company API: 주식코드로 법인 고유번호 조회
+  const url = DART_BASE + '/company.json?crtfc_key=' + DART_API_KEY + '&stock_code=' + stockCode;
+  const resp = await fetch(proxyURL(url));
+  if (!resp.ok) throw new Error('프록시 HTTP ' + resp.status);
+  const outer = await resp.json();
+  if (!outer.contents) throw new Error('프록시 응답 없음');
+  const data = JSON.parse(outer.contents);
+  if (data.status === '000' && data.corp_code) return data.corp_code;
+  throw new Error(data.message || 'corp_code 없음');
+}
+
+/* ═══════════════ FETCH FINANCIAL ═══════════════ */
+async function fetchFinancial() {
+  if (!selectedStock) { showToast('종목을 먼저 선택하세요', 'var(--red)'); return; }
+
+  const year  = document.getElementById('bsnsYear').value;
+  const reprt = document.getElementById('reprtCode').value;
+  const reprtNames = { '11011':'사업보고서(연간)', '11012':'반기보고서', '11013':'1분기보고서', '11014':'3분기보고서' };
+  const stmtNames  = { all:'전체', bs:'재무상태표', is:'손익계산서', cf:'현금흐름표', summary:'요약재무제표' };
+
+  // 헤더 표시
+  document.getElementById('resultPanel').classList.add('show');
+  document.getElementById('companyHeader').classList.add('show');
+  document.getElementById('companyName').textContent   = selectedStock.name;
+  document.getElementById('companyCode').textContent   = selectedStock.code;
+  document.getElementById('companyMkt').textContent    = selectedStock.market;
+  document.getElementById('companyPeriod').textContent = year + '년 · ' + reprtNames[reprt] + ' · ' + stmtNames[selectedStmt] + ' · ' + (selectedFs === 'CFS' ? '연결' : '별도');
+  document.getElementById('dataSourceBadge').innerHTML = apiMode === 'dart'
+    ? '<span class="status-pill status-dart">● DART 실데이터</span>'
+    : '<span class="status-pill status-demo">● 샘플 데이터</span>';
+
+  clearResult();
+  setLoading(true);
+  document.getElementById('resultPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    if (apiMode === 'demo') {
+      await new Promise(r => setTimeout(r, 700));
+      renderResult(generateDemoData(selectedStock, year, selectedStmt), selectedStmt, year);
+      return;
+    }
+
+    // DART 모드
+    let corpCode = selectedStock.corpCode;
+    if (!corpCode) {
+      setLoadingStep('DART 기업코드 조회 중...');
+      corpCode = await getDartCorpCode(selectedStock.code);
+      selectedStock.corpCode = corpCode;
+      document.getElementById('chipCorp').textContent = '(DART: ' + corpCode + ')';
+    }
+
+    setLoadingStep('재무데이터 조회 중 (프록시 경유)...');
+    const items = await fetchDartData(corpCode, year, reprt, selectedFs, selectedStmt);
+    renderResult({ items, source: 'dart' }, selectedStmt, year);
+
+  } catch(e) {
+    showResultError('조회 실패: ' + e.message
+      + '<br><small style="opacity:0.7;margin-top:6px;display:block">'
+      + '프록시 서버(allorigins.win)가 불안정하면 잠시 후 다시 시도하거나 <strong>데모 모드</strong>를 사용하세요.</small>');
+  } finally {
+    setLoading(false);
+    setLoadingStep('');
+  }
+}
+
+/* ═══════════════ DART API (프록시 경유) ═══════════════ */
+async function fetchDartData(corpCode, year, reprt, fsDiv, stmtType) {
+  const url = DART_BASE + '/fnlttSinglAcntAll.json'
+    + '?crtfc_key=' + DART_API_KEY
+    + '&corp_code=' + corpCode
+    + '&bsns_year=' + year
+    + '&reprt_code=' + reprt
+    + '&fs_div=' + fsDiv;
+
+  const resp = await fetch(proxyURL(url));
+  if (!resp.ok) throw new Error('프록시 응답 오류 HTTP ' + resp.status);
+
+  const outer = await resp.json();
+  if (!outer.contents) throw new Error('프록시에서 내용을 받지 못했습니다');
+
+  const data = JSON.parse(outer.contents);
+
+  const dartErrors = {
+    '013': '해당 조건의 데이터가 없습니다. 연도/보고서 유형을 변경해 보세요.',
+    '020': 'API 요청 한도 초과. 잠시 후 재시도하세요.',
+    '010': 'API 인증키 오류',
+    '011': 'API 인증키 사용 불가 상태',
+    '100': '해당 기업의 데이터가 없습니다',
+  };
+  if (data.status !== '000') {
+    throw new Error(dartErrors[data.status] || 'DART 오류: ' + data.message + ' (코드: ' + data.status + ')');
+  }
+
+  let list = Array.isArray(data.list) ? data.list : [];
+
+  // 재무제표 종류 필터
+  if (stmtType !== 'all' && stmtType !== 'summary') {
+    const sjMap = { bs: 'BS', is: 'IS', cf: 'CF' };
+    const sjDiv = sjMap[stmtType];
+    if (sjDiv) list = list.filter(function(it) { return it.sj_div === sjDiv; });
+  }
+
+  if (list.length === 0) throw new Error('해당 조건의 재무데이터가 없습니다. 연도나 보고서 유형을 바꿔보세요.');
+  return list;
+}
+
+/* ═══════════════ RENDER ═══════════════ */
+function renderResult(data, stmtType, year) {
+  var items = data.items;
+  if (!items || items.length === 0) { showResultError('조회된 재무 데이터가 없습니다.'); return; }
+
+  if (data.source === 'demo' || data.isDemo) {
+    renderTable(items, stmtType, year, true);
+  } else {
+    renderTable(items, stmtType, year, false);
+  }
+}
+
+function renderTable(items, stmtType, year, isDemo) {
+  var yr = parseInt(year);
+  var sjNames = { BS: '재무상태표', IS: '손익계산서', CF: '현금흐름표', ETC: '기타' };
+
+  // sj_div 기준으로 그룹핑
+  var groups = {};
+  var groupOrder = [];
+  items.forEach(function(it) {
+    var g = it.sj_div || 'ETC';
+    if (!groups[g]) { groups[g] = []; groupOrder.push(g); }
+    groups[g].push(it);
+  });
+
+  // 우선순위 정렬
+  var preferred = ['BS','IS','CF'];
+  groupOrder.sort(function(a,b) {
+    var ai = preferred.indexOf(a), bi = preferred.indexOf(b);
+    if (ai === -1) ai = 99; if (bi === -1) bi = 99;
+    return ai - bi;
+  });
+  // 중복 제거
+  groupOrder = groupOrder.filter(function(v,i) { return groupOrder.indexOf(v) === i; });
+
+  // KPI Summary: 첫 번째 그룹에서 주요 항목 추출
+  var kpiMap = {
+    BS: ['자산총계','부채총계','자본총계','매출액','영업이익','당기순이익'],
+    IS: ['매출액','영업이익','당기순이익','매출총이익'],
+    CF: ['영업활동현금흐름','투자활동현금흐름','재무활동현금흐름'],
+    ETC:[]
+  };
+
+  var kpiItems = [];
+  groupOrder.slice(0,2).forEach(function(g) {
+    var targets = kpiMap[g] || [];
+    var rows = groups[g] || [];
+    targets.forEach(function(nm) {
+      if (kpiItems.length >= 4) return;
+      var found = rows.find(function(it) { return it.account_nm === nm; });
+      if (found && found.thstrm_amount && found.thstrm_amount !== '-') {
+        kpiItems.push({ label: found.account_nm, val: found.thstrm_amount });
+      }
+    });
+  });
+  // KPI가 없으면 첫 그룹의 총계 행 최대 4개
+  if (kpiItems.length === 0) {
+    var firstRows = groups[groupOrder[0]] || [];
+    firstRows.filter(function(it){ return it.thstrm_amount && it.thstrm_amount !== '-'; })
+      .slice(0,4).forEach(function(it){ kpiItems.push({ label: it.account_nm, val: it.thstrm_amount }); });
+  }
+
+  var summaryHtml = kpiItems.slice(0,4).map(function(it) {
+    var v = parseAmt(it.val);
+    var cls = v > 0 ? 'pos' : v < 0 ? 'neg' : '';
+    return '<div class="summary-item">'
+      + '<div class="summary-label">' + it.label + '</div>'
+      + '<div class="summary-val ' + cls + '">' + fmtMoney(it.val) + '</div>'
+      + '<div class="summary-unit">원</div>'
+      + '</div>';
+  }).join('');
+  document.getElementById('summaryGrid').innerHTML = summaryHtml;
+
+  // Tabs
+  var tabsHtml = groupOrder.map(function(g, i) {
+    return '<button class="section-tab ' + (i===0?'active':'') + '" onclick="switchSection(' + i + ')">'
+      + (sjNames[g] || g) + '</button>';
+  }).join('');
+
+  // 전전기 있는지 체크
+  var hasPrev2 = items.some(function(it){ return it.bfefrmtrm_amount && it.bfefrmtrm_amount !== '-'; });
+
+  var sectionsHtml = groupOrder.map(function(g, i) {
+    var rows = groups[g] || [];
+    var tableRows = rows.map(function(it) { return buildRow(it, hasPrev2); }).join('');
+    var note = isDemo
+      ? '※ 데모 모드: 실제 데이터가 아닌 샘플 데이터입니다'
+      : '단위: 원 · 출처: DART 전자공시시스템 (opendart.fss.or.kr)';
+    return '<div class="section-content ' + (i===0?'active':'') + '" id="sec-' + i + '">'
+      + '<div class="fin-table-wrap"><table>'
+      + '<thead><tr>'
+      + '<th style="text-align:left;min-width:200px">계정과목</th>'
+      + '<th>당기 (' + yr + ')</th>'
+      + '<th>전기 (' + (yr-1) + ')</th>'
+      + (hasPrev2 ? '<th>전전기 (' + (yr-2) + ')</th>' : '')
+      + '<th>증감액</th>'
+      + '<th>증감률</th>'
+      + '</tr></thead>'
+      + '<tbody>' + tableRows + '</tbody>'
+      + '</table></div>'
+      + '<div class="table-note">' + note + '</div>'
+      + '</div>';
+  }).join('');
+
+  document.getElementById('sectionTabs').innerHTML = tabsHtml;
+  document.getElementById('sectionContents').innerHTML = sectionsHtml;
+}
+
+function buildRow(it, hasPrev2) {
+  var v1 = parseAmt(it.thstrm_amount);
+  var v2 = parseAmt(it.frmtrm_amount);
+  var v3 = parseAmt(it.bfefrmtrm_amount);
+  var diff = (v1 !== null && v2 !== null) ? v1 - v2 : null;
+  var pct  = (diff !== null && v2 !== null && v2 !== 0) ? ((diff / Math.abs(v2)) * 100).toFixed(1) : null;
+
+  // account_detail이 null/'-'/'' 이면 대분류(총계), 그 외 소분류(들여쓰기)
+  var detail = it.account_detail;
+  var isIndent = detail && detail !== '-' && detail !== '' && detail !== null;
+  var isTotal  = !isIndent;
+
+  var c1    = v1 !== null && v1 < 0 ? 'neg' : '';
+  var cDiff = diff === null ? '' : diff > 0 ? 'pos' : diff < 0 ? 'neg' : '';
+
+  return '<tr>'
+    + '<td class="' + (isIndent ? 'td-indent' : '') + ' ' + (isTotal ? 'td-total' : '') + '">' + (it.account_nm || '-') + '</td>'
+    + '<td class="' + c1 + ' ' + (isTotal ? 'td-total' : '') + '">' + fmtMoney(it.thstrm_amount) + '</td>'
+    + '<td class="' + (isTotal ? 'td-total' : '') + '">' + fmtMoney(it.frmtrm_amount) + '</td>'
+    + (hasPrev2 ? '<td class="' + (isTotal ? 'td-total' : '') + '">' + fmtMoney(it.bfefrmtrm_amount) + '</td>' : '')
+    + '<td class="' + cDiff + ' ' + (isTotal ? 'td-total' : '') + '">' + (diff !== null ? (diff >= 0 ? '+' : '') + fmtMoney(String(diff)) : '-') + '</td>'
+    + '<td class="' + cDiff + ' ' + (isTotal ? 'td-total' : '') + '">' + (pct !== null ? (diff >= 0 ? '+' : '') + pct + '%' : '-') + '</td>'
+    + '</tr>';
+}
+
+function switchSection(idx) {
+  document.querySelectorAll('.section-tab').forEach(function(t,i){ t.classList.toggle('active', i===idx); });
+  document.querySelectorAll('.section-content').forEach(function(c,i){ c.classList.toggle('active', i===idx); });
+}
+
+/* ═══════════════ DEMO DATA ═══════════════ */
+function generateDemoData(stock, year, stmtType) {
+  var base = 5000000000 + Math.random() * 45000000000;
+  var f = function(n) { return String(Math.round(n)); };
+  var bsRows = [
+    { account_nm:'유동자산',    sj_div:'BS', thstrm_amount:f(base*3),    frmtrm_amount:f(base*2.8),  account_detail:null },
+    { account_nm:'현금및현금성자산', sj_div:'BS', thstrm_amount:f(base*1), frmtrm_amount:f(base*0.9), account_detail:'현금및현금성자산' },
+    { account_nm:'매출채권',    sj_div:'BS', thstrm_amount:f(base*1.2),   frmtrm_amount:f(base*1.1),  account_detail:'매출채권' },
+    { account_nm:'재고자산',    sj_div:'BS', thstrm_amount:f(base*0.8),   frmtrm_amount:f(base*0.8),  account_detail:'재고자산' },
+    { account_nm:'비유동자산',  sj_div:'BS', thstrm_amount:f(base*7),     frmtrm_amount:f(base*6.7),  account_detail:null },
+    { account_nm:'유형자산',    sj_div:'BS', thstrm_amount:f(base*5),     frmtrm_amount:f(base*4.8),  account_detail:'유형자산' },
+    { account_nm:'무형자산',    sj_div:'BS', thstrm_amount:f(base*0.5),   frmtrm_amount:f(base*0.4),  account_detail:'무형자산' },
+    { account_nm:'자산총계',    sj_div:'BS', thstrm_amount:f(base*10),    frmtrm_amount:f(base*9.5),  account_detail:null },
+    { account_nm:'유동부채',    sj_div:'BS', thstrm_amount:f(base*2),     frmtrm_amount:f(base*1.9),  account_detail:null },
+    { account_nm:'비유동부채',  sj_div:'BS', thstrm_amount:f(base*3),     frmtrm_amount:f(base*2.9),  account_detail:null },
+    { account_nm:'부채총계',    sj_div:'BS', thstrm_amount:f(base*5),     frmtrm_amount:f(base*4.8),  account_detail:null },
+    { account_nm:'자본금',      sj_div:'BS', thstrm_amount:f(base*1),     frmtrm_amount:f(base*1),    account_detail:'자본금' },
+    { account_nm:'이익잉여금',  sj_div:'BS', thstrm_amount:f(base*3.5),   frmtrm_amount:f(base*3.2),  account_detail:'이익잉여금' },
+    { account_nm:'자본총계',    sj_div:'BS', thstrm_amount:f(base*5),     frmtrm_amount:f(base*4.7),  account_detail:null },
+  ];
+  var isRows = [
+    { account_nm:'매출액',      sj_div:'IS', thstrm_amount:f(base*8),    frmtrm_amount:f(base*7.2),  account_detail:null },
+    { account_nm:'매출원가',    sj_div:'IS', thstrm_amount:f(base*5.5),  frmtrm_amount:f(base*5),    account_detail:'매출원가' },
+    { account_nm:'매출총이익',  sj_div:'IS', thstrm_amount:f(base*2.5),  frmtrm_amount:f(base*2.2),  account_detail:null },
+    { account_nm:'판매비와관리비',sj_div:'IS',thstrm_amount:f(base*1.6), frmtrm_amount:f(base*1.4),  account_detail:'판매비와관리비' },
+    { account_nm:'영업이익',    sj_div:'IS', thstrm_amount:f(base*0.9),  frmtrm_amount:f(base*0.8),  account_detail:null },
+    { account_nm:'금융수익',    sj_div:'IS', thstrm_amount:f(base*0.15), frmtrm_amount:f(base*0.12), account_detail:'금융수익' },
+    { account_nm:'금융비용',    sj_div:'IS', thstrm_amount:f(base*0.2),  frmtrm_amount:f(base*0.18), account_detail:'금융비용' },
+    { account_nm:'법인세비용차감전순이익',sj_div:'IS',thstrm_amount:f(base*0.85),frmtrm_amount:f(base*0.72),account_detail:null },
+    { account_nm:'법인세비용',  sj_div:'IS', thstrm_amount:f(base*0.25), frmtrm_amount:f(base*0.2),  account_detail:'법인세비용' },
+    { account_nm:'당기순이익',  sj_div:'IS', thstrm_amount:f(base*0.6),  frmtrm_amount:f(base*0.52), account_detail:null },
+  ];
+  var cfRows = [
+    { account_nm:'영업활동현금흐름',sj_div:'CF',thstrm_amount:f(base*1.1), frmtrm_amount:f(base*0.9),  account_detail:null },
+    { account_nm:'당기순이익',      sj_div:'CF',thstrm_amount:f(base*0.6), frmtrm_amount:f(base*0.52), account_detail:'당기순이익' },
+    { account_nm:'감가상각비',      sj_div:'CF',thstrm_amount:f(base*0.5), frmtrm_amount:f(base*0.45), account_detail:'감가상각비' },
+    { account_nm:'투자활동현금흐름',sj_div:'CF',thstrm_amount:f(-base*0.5),frmtrm_amount:f(-base*0.4), account_detail:null },
+    { account_nm:'유형자산취득',    sj_div:'CF',thstrm_amount:f(-base*0.6),frmtrm_amount:f(-base*0.5), account_detail:'유형자산취득' },
+    { account_nm:'재무활동현금흐름',sj_div:'CF',thstrm_amount:f(-base*0.2),frmtrm_amount:f(-base*0.3), account_detail:null },
+    { account_nm:'차입금증감',      sj_div:'CF',thstrm_amount:f(-base*0.1),frmtrm_amount:f(-base*0.2), account_detail:'차입금증감' },
+    { account_nm:'배당금지급',      sj_div:'CF',thstrm_amount:f(-base*0.1),frmtrm_amount:f(-base*0.1), account_detail:'배당금지급' },
+    { account_nm:'현금및현금성자산의증감',sj_div:'CF',thstrm_amount:f(base*0.4),frmtrm_amount:f(base*0.2),account_detail:null },
+  ];
+
+  var allItems;
+  if (stmtType === 'all' || stmtType === 'summary') allItems = bsRows.concat(isRows).concat(cfRows);
+  else if (stmtType === 'bs') allItems = bsRows;
+  else if (stmtType === 'is') allItems = isRows;
+  else if (stmtType === 'cf') allItems = cfRows;
+  else allItems = bsRows.concat(isRows).concat(cfRows);
+
+  return { items: allItems, source: 'demo', isDemo: true };
+}
+
+/* ═══════════════ HELPERS ═══════════════ */
+function parseAmt(v) {
+  if (v === null || v === undefined || v === '' || v === '-') return null;
+  var n = parseInt(String(v).replace(/,/g, ''));
+  return isNaN(n) ? null : n;
+}
+
+function fmtMoney(v) {
+  if (v === null || v === undefined || v === '' || v === '-') return '-';
+  var n = parseAmt(v);
+  if (n === null) return String(v);
+  return n.toLocaleString('ko-KR');
+}
+
+function clearResult() {
+  document.getElementById('errorBox').classList.remove('show');
+  document.getElementById('summaryGrid').innerHTML = '';
+  document.getElementById('sectionTabs').innerHTML = '';
+  document.getElementById('sectionContents').innerHTML = '';
+}
+
+function setLoading(v) {
+  document.getElementById('loadingBox').classList.toggle('show', v);
+}
+
+function setLoadingStep(msg) {
+  document.getElementById('loadingStep').textContent = msg;
+}
+
+function showResultError(html) {
+  document.getElementById('errorMsg').innerHTML = html;
+  document.getElementById('errorBox').classList.add('show');
+}
+
+var toastTimer;
+function showToast(msg, color) {
+  color = color || 'var(--accent)';
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = color;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2600);
+}
+</script>
+</body>
+</html>
