@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>기업 재무정보 조회</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #1f2d47;
+    --accent: #00d4aa;
+    --accent2: #4f8ef7;
+    --red: #ff4f6b;
+    --yellow: #f59e0b;
+    --text: #e2e8f0;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { overflow-x: clip; max-width: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,170,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,170,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Header ── */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    gap: 10px;
+  }
+
+  .header-logo {
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: var(--accent);
+  }
+
+  .header-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 400;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Wrapper ── */
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+
+  .card-title {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* ── Search form ── */
+  .search-form {
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .search-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    position: relative;
+  }
+
+  .stock-search-wrap {
+    position: static;
+    flex: 1;
+  }
+
+  /* Dropdown */
+  .stock-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    z-index: 9999;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.65);
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .stock-dropdown.show { display: block; }
+  .stock-dropdown::-webkit-scrollbar { width: 5px; }
+  .stock-dropdown::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
+
+  .dropdown-count {
+    padding: 8px 16px;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    letter-spacing: 0.3px;
+    position: sticky;
+    top: 0;
+  }
+
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+    gap: 12px;
+  }
+  .dropdown-item:last-child { border-bottom: none; }
+  .dropdown-item:hover { background: rgba(0,212,170,0.08); }
+
+  .dropdown-item-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text);
+    flex: 1;
+    min-width: 0;
+    word-break: keep-all;
+  }
+
+  .dropdown-item-meta { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+
+  .dropdown-item-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .dropdown-item-mkt {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(79,142,247,0.12);
+    color: var(--accent2);
+    border: 1px solid rgba(79,142,247,0.25);
+  }
+
+  .dropdown-loading {
+    padding: 20px 16px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .dropdown-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Selected chip */
+  .selected-chip {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0,212,170,0.08);
+    border: 1px solid rgba(0,212,170,0.3);
+    border-radius: 10px;
+    padding: 10px 16px;
+  }
+  .selected-chip.show { display: flex; }
+
+  .chip-name { font-weight: 700; font-size: 15px; color: var(--text); }
+  .chip-code { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); }
+  .chip-mkt {
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+    background: rgba(79,142,247,0.12); color: var(--accent2); border: 1px solid rgba(79,142,247,0.2);
+  }
+  .chip-clear {
+    margin-left: auto;
+    background: none; border: none; color: var(--text-muted); cursor: pointer;
+    font-size: 18px; line-height: 1; padding: 2px 4px; border-radius: 4px; transition: color 0.2s;
+  }
+  .chip-clear:hover { color: var(--red); }
+
+  /* Options row */
+  .options-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  @media(max-width:600px) { .options-row { grid-template-columns: 1fr; } }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .field select, .field input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Noto Sans KR', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+
+  .field select:focus, .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,212,170,0.1);
+  }
+
+  .select-wrap {
+    position: relative;
+  }
+  .select-wrap::after {
+    content: '▾';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+    font-size: 14px;
+  }
+
+  /* Buttons */
+  .btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 22px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    font-family: 'Noto Sans KR', sans-serif;
+    height: 44px;
+  }
+  .btn:hover { background: #00f0c0; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,212,170,0.3); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-full {
+    width: 100%;
+    height: 48px;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+
+  /* Statement type pills */
+  .stmt-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .stmt-pill {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .stmt-pill:hover { border-color: var(--accent); color: var(--accent); }
+
+  .stmt-pill.active {
+    background: rgba(0,212,170,0.12);
+    border-color: rgba(0,212,170,0.5);
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* Period quick buttons */
+  .period-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .period-pill {
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif;
+    transition: all 0.2s;
+  }
+  .period-pill:hover { border-color: var(--accent2); color: var(--accent2); }
+  .period-pill.active { background: rgba(79,142,247,0.12); border-color: rgba(79,142,247,0.4); color: var(--accent2); }
+
+  /* ── Loading / Error ── */
+  .loading-box {
+    display: none;
+    padding: 48px;
+    text-align: center;
+    color: var(--text-muted);
+    gap: 14px;
+    flex-direction: column;
+    align-items: center;
+  }
+  .loading-box.show { display: flex; }
+
+  .loading-spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+
+  .error-box {
+    display: none;
+    margin: 0 24px 24px;
+    padding: 16px 20px;
+    background: rgba(255,79,107,0.08);
+    border: 1px solid rgba(255,79,107,0.25);
+    border-radius: 12px;
+    color: var(--red);
+    font-size: 13px;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .error-box.show { display: flex; }
+
+  /* ── Company header ── */
+  .company-header {
+    display: none;
+    padding: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .company-header.show { display: block; }
+
+  .company-name {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .company-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .company-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .company-mkt {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(79,142,247,0.12);
+    color: var(--accent2);
+    border: 1px solid rgba(79,142,247,0.2);
+  }
+
+  .company-period {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* ── Tab switcher inside result ── */
+  .result-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .result-tabs::-webkit-scrollbar { display: none; }
+
+  .result-tab {
+    padding: 14px 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    background: none;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+  .result-tab:hover { color: var(--text); }
+  .result-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 700; }
+
+  /* ── Financial table ── */
+  .fin-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .fin-table-wrap::-webkit-scrollbar { height: 5px; }
+  .fin-table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 500px;
+  }
+
+  th {
+    background: var(--surface2);
+    padding: 12px 16px;
+    text-align: right;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  th:first-child { text-align: left; }
+
+  td {
+    padding: 13px 16px;
+    border-bottom: 1px solid rgba(31,45,71,0.6);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    text-align: right;
+    white-space: nowrap;
+    vertical-align: middle;
+    color: var(--text-dim);
+  }
+
+  td:first-child {
+    text-align: left;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.018); }
+
+  .td-group {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    background: rgba(0,0,0,0.2) !important;
+    padding: 8px 16px !important;
+  }
+
+  .td-total {
+    font-weight: 700 !important;
+    color: var(--text) !important;
+    font-size: 13px !important;
+  }
+
+  .td-indent { padding-left: 32px !important; }
+
+  .pos { color: var(--red) !important; }
+  .neg { color: var(--accent2) !important; }
+
+  /* ── Summary grid ── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+  }
+
+  @media(min-width:600px) { .summary-grid { grid-template-columns: repeat(4, 1fr); } }
+
+  .summary-item {
+    padding: 20px 18px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    min-width: 0;
+  }
+  .summary-item:last-child, .summary-item:nth-child(4) { border-right: none; }
+  .summary-item:nth-last-child(-n+2) { border-bottom: none; }
+  @media(min-width:600px) {
+    .summary-item:nth-child(4) { border-right: none; }
+    .summary-item:nth-child(n+3) { border-bottom: none; }
+    .summary-item:nth-child(2) { border-right: 1px solid var(--border); }
+  }
+
+  .summary-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); font-weight: 700; margin-bottom: 8px; }
+  .summary-val { font-size: clamp(13px,3.5vw,18px); font-weight: 900; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.5px; }
+  .summary-unit { font-size: 11px; color: var(--text-muted); margin-top: 3px; font-weight: 400; }
+
+  /* ── Result panel ── */
+  .result-panel {
+    display: none;
+  }
+  .result-panel.show { display: block; }
+
+  /* ── No data ── */
+  .no-data {
+    padding: 48px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    z-index: 9999;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── Notice ── */
+  .notice {
+    padding: 14px 20px;
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.25);
+    border-radius: 10px;
+    color: var(--yellow);
+    font-size: 12px;
+    line-height: 1.6;
+    margin-bottom: 0;
+  }
+
+  .notice strong { font-weight: 700; }
+
+  /* ── Intro ── */
+  .intro {
+    margin-bottom: 28px;
+  }
+
+  .intro h1 {
+    font-size: clamp(20px,4vw,32px);
+    font-weight: 900;
+    letter-spacing: -0.8px;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  .intro h1 span { color: var(--accent); }
+
+  .intro p {
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 300;
+  }
+
+  .badge-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,212,170,0.1);
+    border: 1px solid rgba(0,212,170,0.3);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+
+  .badge-live::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Table section header */
+  .section-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 0 0 0 0;
+  }
+
+  .section-tab {
+    padding: 12px 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.2s;
+    background: none;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    font-family: 'Noto Sans KR', sans-serif;
+    white-space: nowrap;
+  }
+
+  .section-tab:hover { color: var(--text); }
+  .section-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 700; }
+
+  .section-content { display: none; }
+  .section-content.active { display: block; }
+
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <span class="header-logo">📊 FinStat</span>
+  <span class="header-sub">기업 재무정보 조회</span>
+</div>
+
+<!-- Main -->
+<div class="wrapper">
+
+  <!-- Intro -->
+  <div class="intro">
+    <div class="badge-live">금융위원회 Open API</div>
+    <h1>기업 <span>재무정보</span> 조회</h1>
+    <p>종목을 검색하고 원하는 재무제표와 기간을 선택하세요</p>
+  </div>
+
+  <!-- Search Card -->
+  <div class="card">
+    <div class="card-title">
+      <span>🔍 종목 검색 및 조회 설정</span>
+    </div>
+    <div class="search-form">
+
+      <!-- Stock search -->
+      <div class="field">
+        <label>종목 검색</label>
+        <div class="search-row" id="searchRow">
+          <div class="stock-search-wrap" style="position:relative;flex:1">
+            <div style="display:flex;gap:10px">
+              <input type="text" id="stockSearchInput" placeholder="종목명 또는 6자리 코드 입력 후 검색"
+                style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;width:100%;transition:border-color 0.2s;"
+                oninput="onSearchInput()" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+              >
+              <button class="btn" id="stockSearchBtn" onclick="searchStock()">검색</button>
+            </div>
+            <div class="stock-dropdown" id="stockDropdown"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Selected chip -->
+      <div class="selected-chip" id="selectedChip">
+        <span class="chip-name" id="chipName"></span>
+        <span class="chip-code" id="chipCode"></span>
+        <span class="chip-mkt" id="chipMkt"></span>
+        <button class="chip-clear" onclick="clearSelected()" title="선택 취소">✕</button>
+      </div>
+
+      <!-- Statement type -->
+      <div class="field">
+        <label>재무제표 선택</label>
+        <div class="stmt-pills">
+          <button class="stmt-pill active" data-type="summary" onclick="selectStmt(this)">요약재무제표</button>
+          <button class="stmt-pill" data-type="bs" onclick="selectStmt(this)">재무상태표</button>
+          <button class="stmt-pill" data-type="is" onclick="selectStmt(this)">손익계산서</button>
+          <button class="stmt-pill" data-type="cf" onclick="selectStmt(this)">현금흐름표</button>
+        </div>
+      </div>
+
+      <!-- Period -->
+      <div class="options-row">
+        <div class="field">
+          <label>결산 유형</label>
+          <div class="select-wrap">
+            <select id="reprtCode">
+              <option value="11011">사업보고서 (연간)</option>
+              <option value="11012">반기보고서</option>
+              <option value="11013">1분기보고서</option>
+              <option value="11014">3분기보고서</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>사업연도</label>
+          <div class="select-wrap">
+            <select id="bsnsYear">
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search btn -->
+      <button class="btn btn-full" id="searchBtn" onclick="fetchFinancial()">재무정보 조회</button>
+
+      <!-- Notice -->
+      <div class="notice">
+        <strong>⚠️ 안내:</strong> 금융위원회 재무정보 API(apis.data.go.kr)는 <strong>CORS 제한</strong>이 있어 브라우저에서 직접 호출 시 오류가 발생할 수 있습니다.
+        정상 작동을 위해서는 로컬 프록시 서버 또는 <strong>DART Open API</strong>(아래에서 전환 가능) 사용을 권장합니다.
+        데모 데이터로도 확인하실 수 있습니다.
+      </div>
+
+    </div>
+  </div>
+
+  <!-- API Source toggle -->
+  <div class="card" style="overflow:visible;">
+    <div class="card-title">
+      <span>⚙️ API 소스 설정</span>
+    </div>
+    <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="stmt-pill active" id="srcFss" onclick="setApiSource('fss')">금융위원회 API</button>
+        <button class="stmt-pill" id="srcDart" onclick="setApiSource('dart')">DART Open API</button>
+        <button class="stmt-pill" id="srcDemo" onclick="setApiSource('demo')">데모 모드</button>
+      </div>
+      <div id="dartKeyWrap" style="display:none;">
+        <div class="field">
+          <label>DART API Key</label>
+          <input type="text" id="dartApiKey" placeholder="DART Open API 인증키 입력 (opendart.fss.or.kr에서 발급)"
+            style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:13px;font-family:'JetBrains Mono',monospace;outline:none;width:100%;transition:border-color 0.2s;"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+          >
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);line-height:1.7;">
+        <span id="apiSourceDesc">현재: 금융위원회 API (apis.data.go.kr) · CORS 제한으로 직접 호출 불가할 수 있음</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="card result-panel" id="resultPanel">
+    <div class="company-header" id="companyHeader">
+      <div class="company-name" id="companyName"></div>
+      <div class="company-meta">
+        <span class="company-code" id="companyCode"></span>
+        <span class="company-mkt" id="companyMkt"></span>
+      </div>
+      <div class="company-period" id="companyPeriod"></div>
+    </div>
+
+    <!-- Summary strip -->
+    <div class="summary-grid" id="summaryGrid"></div>
+
+    <!-- Section tabs -->
+    <div class="section-tabs" id="sectionTabs"></div>
+
+    <!-- Table sections -->
+    <div id="sectionContents"></div>
+
+    <!-- Loading -->
+    <div class="loading-box" id="loadingBox">
+      <div class="loading-spinner"></div>
+      <span>재무정보를 불러오는 중...</span>
+    </div>
+
+    <!-- Error -->
+    <div class="error-box" id="errorBox">
+      <span>⚠️</span>
+      <span id="errorMsg"></span>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── Constants ── */
+const FSS_API_KEY = 'dc8294cd0177c5d51b45be29652fb691c4b18e055f22c87b0967ca1a78c7df0a';
+const STOCK_BASE_URL = 'https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo';
+const FINA_BASE_URL  = 'https://apis.data.go.kr/1160100/service/GetFinaStatInfoService_V2';
+
+/* ── State ── */
+let selectedStock = null;
+let selectedStmtType = 'summary';
+let apiSource = 'fss';
+
+/* ── Year options ── */
+(function() {
+  const sel = document.getElementById('bsnsYear');
+  const yr  = new Date().getFullYear();
+  for (let y = yr; y >= yr - 6; y--) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = `${y}년`;
+    if (y === yr - 1) opt.selected = true;
+    sel.appendChild(opt);
+  }
+})();
+
+/* ── Stock search ── */
+let searchTimeout = null;
+
+function onSearchInput() {
+  clearTimeout(searchTimeout);
+  const q = document.getElementById('stockSearchInput').value.trim();
+  if (!q) { document.getElementById('stockDropdown').classList.remove('show'); return; }
+  searchTimeout = setTimeout(searchStock, 400);
+}
+
+document.getElementById('stockSearchInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') searchStock();
+  if (e.key === 'Escape') closeDropdown();
+});
+
+document.addEventListener('click', e => {
+  const wrap = document.querySelector('.stock-search-wrap');
+  if (wrap && !wrap.contains(e.target)) closeDropdown();
+});
+
+function closeDropdown() {
+  document.getElementById('stockDropdown').classList.remove('show');
+}
+
+async function searchStock() {
+  const q = document.getElementById('stockSearchInput').value.trim();
+  if (!q) return;
+
+  const dd = document.getElementById('stockDropdown');
+  dd.innerHTML = '<div class="dropdown-loading"><div class="dropdown-spinner"></div> 검색 중...</div>';
+  dd.classList.add('show');
+  document.getElementById('stockSearchBtn').disabled = true;
+
+  try {
+    const params = { serviceKey: FSS_API_KEY, resultType: 'json', numOfRows: 50, pageNo: 1 };
+    if (/^\d{6}$/.test(q)) params.likeSrtnCd = q;
+    else params.likeItmsNm = q;
+
+    const qs   = new URLSearchParams(params);
+    const resp = await fetch(`${STOCK_BASE_URL}?${qs}`);
+    const data = await resp.json();
+    const items = data?.response?.body?.items?.item;
+    const total = parseInt(data?.response?.body?.totalCount || 0);
+
+    if (!items || total === 0) {
+      dd.innerHTML = '<div class="dropdown-loading">검색 결과가 없습니다.</div>';
+      return;
+    }
+
+    const list = Array.isArray(items) ? items : [items];
+    const seen = new Map();
+    list.forEach(it => {
+      if (!seen.has(it.srtnCd) || it.basDt > seen.get(it.srtnCd).basDt) seen.set(it.srtnCd, it);
+    });
+    const uniq = [...seen.values()];
+
+    dd.innerHTML = `<div class="dropdown-count">검색 결과 ${uniq.length}건 — 종목을 선택하세요</div>` +
+      uniq.map(it => {
+        const name = it.itmsNm.replace(/'/g, "&#39;");
+        return `<div class="dropdown-item" onclick="selectStock('${name}','${it.srtnCd}','${it.mrktCtg||''}')">
+          <span class="dropdown-item-name">${it.itmsNm}</span>
+          <span class="dropdown-item-meta">
+            <span class="dropdown-item-code">${it.srtnCd}</span>
+            ${it.mrktCtg ? `<span class="dropdown-item-mkt">${it.mrktCtg}</span>` : ''}
+          </span>
+        </div>`;
+      }).join('');
+
+  } catch(e) {
+    dd.innerHTML = `<div class="dropdown-loading">⚠️ 검색 실패: ${e.message}</div>`;
+  } finally {
+    document.getElementById('stockSearchBtn').disabled = false;
+  }
+}
+
+function selectStock(name, code, market) {
+  selectedStock = { name, code, market };
+  closeDropdown();
+  document.getElementById('stockSearchInput').value = '';
+
+  document.getElementById('chipName').textContent = name;
+  document.getElementById('chipCode').textContent = code;
+  document.getElementById('chipMkt').textContent  = market;
+  document.getElementById('selectedChip').classList.add('show');
+  showToast(`${name} 선택됨`);
+}
+
+function clearSelected() {
+  selectedStock = null;
+  document.getElementById('selectedChip').classList.remove('show');
+  document.getElementById('stockSearchInput').value = '';
+  document.getElementById('stockSearchInput').focus();
+}
+
+/* ── Statement type ── */
+function selectStmt(btn) {
+  document.querySelectorAll('.stmt-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  selectedStmtType = btn.dataset.type;
+}
+
+/* ── API Source ── */
+function setApiSource(src) {
+  apiSource = src;
+  ['fss','dart','demo'].forEach(s => {
+    document.getElementById('src'+s.charAt(0).toUpperCase()+s.slice(1)).classList.toggle('active', s === src);
+  });
+  document.getElementById('dartKeyWrap').style.display = src === 'dart' ? 'block' : 'none';
+
+  const descs = {
+    fss: '현재: 금융위원회 API (apis.data.go.kr) · CORS 제한으로 직접 호출 불가할 수 있음',
+    dart: '현재: DART Open API (opendart.fss.or.kr) · 재무정보에 더 적합, DART 인증키 필요',
+    demo: '현재: 데모 모드 · 샘플 데이터로 UI를 확인합니다 (실제 데이터 아님)'
+  };
+  document.getElementById('apiSourceDesc').textContent = descs[src];
+}
+
+/* ── Fetch Financial Data ── */
+async function fetchFinancial() {
+  if (!selectedStock) { showToast('종목을 먼저 선택해주세요', 'var(--red)'); return; }
+
+  const year    = document.getElementById('bsnsYear').value;
+  const reprt   = document.getElementById('reprtCode').value;
+  const stmtMap = { summary: '요약재무제표', bs: '재무상태표', is: '손익계산서', cf: '현금흐름표' };
+
+  showResult();
+  setLoading(true);
+  clearError();
+
+  // Company header
+  document.getElementById('companyName').textContent = selectedStock.name;
+  document.getElementById('companyCode').textContent = selectedStock.code;
+  document.getElementById('companyMkt').textContent  = selectedStock.market;
+  document.getElementById('companyHeader').classList.add('show');
+
+  const reprtNames = { '11011':'사업보고서(연간)', '11012':'반기보고서', '11013':'1분기보고서', '11014':'3분기보고서' };
+  document.getElementById('companyPeriod').textContent = `${year}년 · ${reprtNames[reprt]} · ${stmtMap[selectedStmtType]}`;
+
+  try {
+    let data;
+
+    if (apiSource === 'demo') {
+      await new Promise(r => setTimeout(r, 800));
+      data = generateDemoData(selectedStock, year, selectedStmtType);
+    } else if (apiSource === 'dart') {
+      data = await fetchFromDart(selectedStock.code, year, reprt, selectedStmtType);
+    } else {
+      data = await fetchFromFss(selectedStock.code, year, reprt, selectedStmtType);
+    }
+
+    renderFinancial(data, selectedStmtType);
+
+  } catch(e) {
+    showError(`조회 실패: ${e.message}`);
+  } finally {
+    setLoading(false);
+  }
+}
+
+/* ── FSS API fetch ── */
+async function fetchFromFss(code, year, reprt, stmtType) {
+  // FSS GetFinaStatInfoService_V2 endpoint
+  // Operations: getSummFinaStat (요약재무제표), getFinaStat (재무상태표/손익/현금)
+  const stmtCodeMap = {
+    summary: 'getSummFinaStat',
+    bs: 'getFinaStat',
+    is: 'getFinaStat',
+    cf: 'getFinaStat'
+  };
+
+  const operation = stmtCodeMap[stmtType];
+
+  const params = new URLSearchParams({
+    serviceKey: FSS_API_KEY,
+    resultType: 'json',
+    numOfRows: 200,
+    pageNo: 1,
+    crno: code,   // 법인등록번호 (종목코드로 시도)
+    bizYear: year,
+  });
+
+  if (stmtType !== 'summary') {
+    const fsDiv = { bs: 'BS', is: 'IS', cf: 'CF' };
+    params.append('fsDivAbrv', fsDiv[stmtType]);
+  }
+
+  const url = `${FINA_BASE_URL}/${operation}?${params}`;
+  const resp = await fetch(url);
+
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+  const json = await resp.json();
+  const items = json?.response?.body?.items?.item;
+
+  if (!items) throw new Error('데이터가 없습니다. 법인등록번호(CRNO)를 직접 입력하거나 DART API를 사용하세요.');
+
+  return parseFssData(Array.isArray(items) ? items : [items], stmtType);
+}
+
+/* ── DART API fetch ── */
+async function fetchFromDart(code, year, reprt, stmtType) {
+  const dartKey = document.getElementById('dartApiKey').value.trim();
+  if (!dartKey) throw new Error('DART API 인증키를 입력해주세요');
+
+  // DART corpCode 조회 (종목코드로 회사 검색)
+  // Note: DART API도 CORS 제한이 있어 프록시가 필요할 수 있음
+  const fsDiv = { summary: 'CFS', bs: 'BS', is: 'IS', cf: 'CF' };
+
+  const params = new URLSearchParams({
+    crtfc_key: dartKey,
+    corp_code: code,  // 실제로는 8자리 고유번호 필요
+    bsns_year: year,
+    reprt_code: reprt,
+    fs_div: 'CFS'
+  });
+
+  const resp = await fetch(`https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?${params}`);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+  const json = await resp.json();
+  if (json.status !== '000') throw new Error(json.message || 'DART API 오류');
+
+  return parseDartData(json.list || [], stmtType);
+}
+
+/* ── Parse FSS data ── */
+function parseFssData(items, stmtType) {
+  const result = { items, source: 'fss', stmtType };
+  return result;
+}
+
+/* ── Parse DART data ── */
+function parseDartData(items, stmtType) {
+  const stmtMap = { summary: null, bs: 'BS', is: 'IS', cf: 'CF' };
+  const filtered = stmtMap[stmtType]
+    ? items.filter(it => it.sj_div === stmtMap[stmtType])
+    : items;
+
+  return { items: filtered, source: 'dart', stmtType };
+}
+
+/* ── Demo data generator ── */
+function generateDemoData(stock, year, stmtType) {
+  const base = 5000000 + Math.random() * 50000000; // 50억~550억
+  const M = 1e8; // 억
+
+  const demoSets = {
+    summary: [
+      { label: '자산총계',     t1: fmt(base*10), t2: fmt(base*9.5), group: null, isTotal: true },
+      { label: '부채총계',     t1: fmt(base*5),  t2: fmt(base*4.8), group: null, isTotal: false },
+      { label: '자본총계',     t1: fmt(base*5),  t2: fmt(base*4.7), group: null, isTotal: true },
+      { label: '매출액',       t1: fmt(base*8),  t2: fmt(base*7.2), group: '손익', isTotal: false },
+      { label: '영업이익',     t1: fmt(base*0.9),t2: fmt(base*0.8), group: '손익', isTotal: false },
+      { label: '당기순이익',   t1: fmt(base*0.7),t2: fmt(base*0.6), group: '손익', isTotal: true },
+      { label: '영업활동현금흐름',t1:fmt(base*1.1),t2:fmt(base*0.9),group: '현금흐름', isTotal: false },
+      { label: '투자활동현금흐름',t1:fmt(-base*0.5),t2:fmt(-base*0.4),group:'현금흐름',isTotal:false },
+      { label: '재무활동현금흐름',t1:fmt(-base*0.2),t2:fmt(-base*0.3),group:'현금흐름',isTotal:false },
+    ],
+    bs: [
+      { label: '유동자산',      t1: fmt(base*3),  t2: fmt(base*2.8), group: '자산', isTotal: false, indent: false },
+      { label: '  현금및현금성자산',t1:fmt(base*1),t2:fmt(base*0.9),group:null,isTotal:false,indent:true},
+      { label: '  매출채권',    t1: fmt(base*1.2),t2: fmt(base*1.1), group: null, isTotal: false, indent: true },
+      { label: '  재고자산',    t1: fmt(base*0.8),t2: fmt(base*0.8), group: null, isTotal: false, indent: true },
+      { label: '비유동자산',    t1: fmt(base*7),  t2: fmt(base*6.7), group: null, isTotal: false, indent: false },
+      { label: '  유형자산',    t1: fmt(base*5),  t2: fmt(base*4.8), group: null, isTotal: false, indent: true },
+      { label: '  무형자산',    t1: fmt(base*0.5),t2: fmt(base*0.4), group: null, isTotal: false, indent: true },
+      { label: '자산총계',      t1: fmt(base*10), t2: fmt(base*9.5), group: null, isTotal: true,  indent: false },
+      { label: '유동부채',      t1: fmt(base*2),  t2: fmt(base*1.9), group: '부채', isTotal: false, indent: false },
+      { label: '비유동부채',    t1: fmt(base*3),  t2: fmt(base*2.9), group: null, isTotal: false, indent: false },
+      { label: '부채총계',      t1: fmt(base*5),  t2: fmt(base*4.8), group: null, isTotal: true,  indent: false },
+      { label: '자본금',        t1: fmt(base*1),  t2: fmt(base*1),   group: '자본', isTotal: false, indent: false },
+      { label: '이익잉여금',    t1: fmt(base*3.5),t2: fmt(base*3.2), group: null, isTotal: false, indent: false },
+      { label: '자본총계',      t1: fmt(base*5),  t2: fmt(base*4.7), group: null, isTotal: true,  indent: false },
+    ],
+    is: [
+      { label: '매출액',        t1: fmt(base*8),  t2: fmt(base*7.2), group: null, isTotal: false },
+      { label: '매출원가',      t1: fmt(base*5.5),t2: fmt(base*5),   group: null, isTotal: false },
+      { label: '매출총이익',    t1: fmt(base*2.5),t2: fmt(base*2.2), group: null, isTotal: true  },
+      { label: '판매비와관리비',t1: fmt(base*1.6),t2: fmt(base*1.4), group: null, isTotal: false },
+      { label: '영업이익',      t1: fmt(base*0.9),t2: fmt(base*0.8), group: null, isTotal: true  },
+      { label: '기타수익',      t1: fmt(base*0.2),t2: fmt(base*0.15),group: '영업외', isTotal: false },
+      { label: '기타비용',      t1: fmt(base*0.1),t2: fmt(base*0.1), group: null, isTotal: false },
+      { label: '금융수익',      t1: fmt(base*0.15),t2:fmt(base*0.12),group: null, isTotal: false },
+      { label: '금융비용',      t1: fmt(base*0.2),t2: fmt(base*0.18),group: null, isTotal: false },
+      { label: '법인세비용차감전순이익',t1:fmt(base*1),t2:fmt(base*0.82),group:null,isTotal:true},
+      { label: '법인세비용',    t1: fmt(base*0.3),t2: fmt(base*0.22),group: null, isTotal: false },
+      { label: '당기순이익',    t1: fmt(base*0.7),t2: fmt(base*0.6), group: null, isTotal: true  },
+    ],
+    cf: [
+      { label: '영업활동현금흐름', t1: fmt(base*1.1),t2: fmt(base*0.9), group: '영업활동', isTotal: true  },
+      { label: '  당기순이익',    t1: fmt(base*0.7),t2: fmt(base*0.6), group: null, isTotal: false, indent: true },
+      { label: '  감가상각비',    t1: fmt(base*0.5),t2: fmt(base*0.45),group: null, isTotal: false, indent: true },
+      { label: '  운전자본 변동', t1: fmt(-base*0.1),t2:fmt(-base*0.15),group:null,isTotal:false,indent:true},
+      { label: '투자활동현금흐름',t1: fmt(-base*0.5),t2:fmt(-base*0.4),group:'투자활동',isTotal: true  },
+      { label: '  유형자산 취득',  t1: fmt(-base*0.6),t2:fmt(-base*0.5),group:null,isTotal:false,indent:true},
+      { label: '  금융자산 처분',  t1: fmt(base*0.1),t2: fmt(base*0.1),group: null, isTotal: false, indent: true },
+      { label: '재무활동현금흐름',t1: fmt(-base*0.2),t2:fmt(-base*0.3),group:'재무활동',isTotal: true  },
+      { label: '  차입금 증감',    t1: fmt(-base*0.1),t2:fmt(-base*0.2),group:null,isTotal:false,indent:true},
+      { label: '  배당금 지급',    t1: fmt(-base*0.1),t2:fmt(-base*0.1),group:null,isTotal:false,indent:true},
+      { label: '현금및현금성자산의 증감', t1: fmt(base*0.4), t2: fmt(base*0.2), group: null, isTotal: true },
+    ]
+  };
+
+  function fmt(n) { return Math.round(n).toString(); }
+
+  const yr = parseInt(year);
+  return {
+    items: demoSets[stmtType],
+    source: 'demo',
+    stmtType,
+    years: [`${yr}년`, `${yr-1}년`],
+    currency: '원 (단위: 백만원)',
+    isDemo: true
+  };
+}
+
+/* ── Render financial data ── */
+function renderFinancial(data, stmtType) {
+  const { items, source, years, isDemo } = data;
+
+  if (!items || items.length === 0) {
+    showError('조회된 재무 데이터가 없습니다.');
+    return;
+  }
+
+  clearError();
+
+  const yr = parseInt(document.getElementById('bsnsYear').value);
+  const colYears = years || [`${yr}년`, `${yr-1}년`];
+
+  if (isDemo) {
+    renderDemoTable(items, stmtType, colYears);
+  } else if (source === 'fss') {
+    renderFssTable(items, stmtType, colYears);
+  } else {
+    renderDartTable(items, stmtType, colYears);
+  }
+}
+
+/* ── Render demo table ── */
+function renderDemoTable(items, stmtType, colYears) {
+  const stmtNames = { summary: '요약재무제표', bs: '재무상태표', is: '손익계산서', cf: '현금흐름표' };
+
+  // Summary KPIs
+  const summaryItems = stmtType === 'summary' ? items.slice(0, 4) :
+    stmtType === 'bs' ? [items.find(i => i.label === '자산총계'), items.find(i => i.label === '부채총계'), items.find(i => i.label === '자본총계')].filter(Boolean) :
+    stmtType === 'is' ? [items.find(i => i.label === '매출액'), items.find(i => i.label === '영업이익'), items.find(i => i.label === '당기순이익')].filter(Boolean) :
+    [items.find(i => i.label === '영업활동현금흐름'), items.find(i => i.label === '투자활동현금흐름'), items.find(i => i.label === '재무활동현금흐름')].filter(Boolean);
+
+  const summaryHtml = summaryItems.slice(0,4).map(it => {
+    const v = parseInt(it?.t1 || 0);
+    const cls = v > 0 ? 'pos' : v < 0 ? 'neg' : '';
+    return `
+      <div class="summary-item">
+        <div class="summary-label">${it?.label || ''}</div>
+        <div class="summary-val ${cls}">${formatMoney(it?.t1)}</div>
+        <div class="summary-unit">백만원</div>
+      </div>`;
+  }).join('');
+  document.getElementById('summaryGrid').innerHTML = summaryHtml;
+
+  // Table
+  const tableHtml = `
+    <div class="fin-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left;min-width:200px">계정과목</th>
+            <th>${colYears[0]}</th>
+            <th>${colYears[1]}</th>
+            <th>증감액</th>
+            <th>증감률</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map(it => {
+            const v1 = parseInt(it.t1 || 0);
+            const v2 = parseInt(it.t2 || 0);
+            const diff = v1 - v2;
+            const pct  = v2 !== 0 ? ((diff / Math.abs(v2)) * 100).toFixed(1) : '-';
+            const cls1 = v1 > 0 ? '' : v1 < 0 ? 'neg' : '';
+            const diffCls = diff > 0 ? 'pos' : diff < 0 ? 'neg' : '';
+
+            if (it.group !== null && it.group !== undefined) {
+              return `<tr><td class="td-group" colspan="5">${it.group}</td></tr>
+                <tr class="${it.isTotal ? 'tr-total' : ''}">
+                  <td class="${it.indent ? 'td-indent' : ''} ${it.isTotal ? 'td-total' : ''}">${it.label}</td>
+                  <td class="${cls1} ${it.isTotal ? 'td-total' : ''}">${formatMoney(it.t1)}</td>
+                  <td class="${it.isTotal ? 'td-total' : ''}">${formatMoney(it.t2)}</td>
+                  <td class="${diffCls} ${it.isTotal ? 'td-total' : ''}">${diff >= 0 ? '+' : ''}${formatMoney(diff.toString())}</td>
+                  <td class="${diffCls} ${it.isTotal ? 'td-total' : ''}">${pct !== '-' ? (diff >= 0 ? '+' : '') + pct + '%' : '-'}</td>
+                </tr>`;
+            }
+            return `<tr>
+              <td class="${it.indent ? 'td-indent' : ''} ${it.isTotal ? 'td-total' : ''}">${it.label}</td>
+              <td class="${cls1} ${it.isTotal ? 'td-total' : ''}">${formatMoney(it.t1)}</td>
+              <td class="${it.isTotal ? 'td-total' : ''}">${formatMoney(it.t2)}</td>
+              <td class="${diffCls} ${it.isTotal ? 'td-total' : ''}">${diff >= 0 ? '+' : ''}${formatMoney(diff.toString())}</td>
+              <td class="${diffCls} ${it.isTotal ? 'td-total' : ''}">${pct !== '-' ? (diff >= 0 ? '+' : '') + pct + '%' : '-'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+    ${isDemo() ? '<div style="padding:12px 20px;font-size:11px;color:var(--text-muted);text-align:right;">※ 데모 모드: 샘플 데이터입니다</div>' : ''}
+  `;
+
+  function isDemo() { return apiSource === 'demo'; }
+
+  document.getElementById('sectionTabs').innerHTML = `<button class="section-tab active">${stmtNames[stmtType]}</button>`;
+  document.getElementById('sectionContents').innerHTML = `<div class="section-content active">${tableHtml}</div>`;
+}
+
+/* ── Render FSS table ── */
+function renderFssTable(items, stmtType, colYears) {
+  // Generic rendering for FSS raw items
+  const keys = Object.keys(items[0] || {});
+
+  const tableHtml = `
+    <div class="fin-table-wrap">
+      <table>
+        <thead><tr>${keys.map(k => `<th style="text-align:left">${k}</th>`).join('')}</tr></thead>
+        <tbody>${items.slice(0, 50).map(it =>
+          `<tr>${keys.map(k => `<td style="text-align:left">${it[k] ?? '-'}</td>`).join('')}</tr>`
+        ).join('')}</tbody>
+      </table>
+    </div>`;
+
+  document.getElementById('summaryGrid').innerHTML = '';
+  document.getElementById('sectionTabs').innerHTML = '<button class="section-tab active">재무정보</button>';
+  document.getElementById('sectionContents').innerHTML = `<div class="section-content active">${tableHtml}</div>`;
+}
+
+/* ── Render DART table ── */
+function renderDartTable(items, stmtType, colYears) {
+  // Group by sj_nm
+  const groups = {};
+  items.forEach(it => {
+    const g = it.sj_nm || '기타';
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(it);
+  });
+
+  const groupNames = Object.keys(groups);
+  const tabsHtml = groupNames.map((g, i) =>
+    `<button class="section-tab ${i===0?'active':''}" onclick="switchSection(${i})">${g}</button>`
+  ).join('');
+
+  // Find unique years from data
+  const allYears = [...new Set(items.map(it => it.bsns_year))].sort().reverse();
+
+  const sectionsHtml = groupNames.map((g, i) => {
+    const rows = groups[g];
+    return `<div class="section-content ${i===0?'active':''}" id="sec-${i}">
+      <div class="fin-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left;min-width:200px">계정과목</th>
+              ${allYears.map(y => `<th>${y}년</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(it => {
+              const v = parseInt(it.thstrm_amount || 0);
+              const cls = v > 0 ? '' : v < 0 ? 'neg' : '';
+              return `<tr>
+                <td>${it.account_nm || '-'}</td>
+                <td class="${cls}">${formatMoney(it.thstrm_amount)}</td>
+                ${it.frmtrm_amount !== undefined ? `<td>${formatMoney(it.frmtrm_amount)}</td>` : ''}
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('sectionTabs').innerHTML = tabsHtml;
+  document.getElementById('sectionContents').innerHTML = sectionsHtml;
+}
+
+function switchSection(idx) {
+  document.querySelectorAll('.section-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+  document.querySelectorAll('.section-content').forEach((c, i) => c.classList.toggle('active', i === idx));
+}
+
+/* ── Helpers ── */
+function formatMoney(v) {
+  if (v === null || v === undefined || v === '') return '-';
+  const n = parseInt(v);
+  if (isNaN(n)) return v;
+  return n.toLocaleString('ko-KR');
+}
+
+function showResult() {
+  document.getElementById('resultPanel').classList.add('show');
+  document.getElementById('resultPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function setLoading(v) {
+  document.getElementById('loadingBox').classList.toggle('show', v);
+}
+
+function showError(msg) {
+  document.getElementById('errorMsg').textContent = msg;
+  document.getElementById('errorBox').classList.add('show');
+}
+
+function clearError() {
+  document.getElementById('errorBox').classList.remove('show');
+  document.getElementById('summaryGrid').innerHTML = '';
+  document.getElementById('sectionTabs').innerHTML = '';
+  document.getElementById('sectionContents').innerHTML = '';
+}
+
+let toastTimer;
+function showToast(msg, color='var(--accent)') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = color;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
