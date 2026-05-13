@@ -14,16 +14,12 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{overflow-x:clip;}
 body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;}
-body::before{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background-image:linear-gradient(rgba(0,212,170,.03)1px,transparent 1px),
-                   linear-gradient(90deg,rgba(0,212,170,.03)1px,transparent 1px);
-  background-size:40px 40px;
-}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(0,212,170,.03)1px,transparent 1px),linear-gradient(90deg,rgba(0,212,170,.03)1px,transparent 1px);
+  background-size:40px 40px;}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 
-/* ── 헤더 ── */
 .header{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 24px;}
 .hlogo{font-size:15px;font-weight:900;letter-spacing:1px;color:var(--accent);}
 .hsub{font-size:11px;color:var(--muted);margin-left:8px;}
@@ -33,27 +29,21 @@ body::before{
 .gas-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:blink 1.5s ease-in-out infinite;}
 .gas-dot.on{animation:none;}
 
-/* ── 래퍼 ── */
 .wrap{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:28px 20px 80px;}
-
-/* ── 뱃지 ── */
 .badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.3);border-radius:20px;padding:4px 14px;font-size:11px;color:var(--accent);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px;font-weight:600;}
 .badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:blink 2s ease-in-out infinite;}
 h1{font-size:clamp(20px,4vw,30px);font-weight:900;letter-spacing:-.8px;margin-bottom:6px;}
 h1 em{font-style:normal;color:var(--accent);}
 .subtitle{color:var(--muted);font-size:13px;margin-bottom:24px;}
 
-/* ── 카드 ── */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;margin-bottom:20px;overflow:visible;}
 .ctitle{padding:16px 24px;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);}
 .cbody{padding:24px;display:flex;flex-direction:column;gap:16px;}
 
-/* ── 공지 ── */
 .notice{padding:14px 18px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px;color:var(--yellow);font-size:12px;line-height:1.9;}
 .notice strong{font-weight:700;}
 .notice code{background:rgba(0,0,0,.35);padding:1px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#fcd34d;display:inline-block;word-break:break-all;}
 
-/* ── 폼 ── */
 .flabel{display:block;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
 .finput{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color .2s;}
 .finput:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,170,.1);}
@@ -64,46 +54,41 @@ h1 em{font-style:normal;color:var(--accent);}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 @media(max-width:560px){.row2{grid-template-columns:1fr;}}
 
-/* ══ portfolio.html 드롭다운 CSS 그대로 ══ */
+/* ── portfolio.html 드롭다운/칩 CSS 그대로 ── */
 .stock-search-wrap{position:relative;flex:1;min-width:0;}
 .search-row{display:flex;gap:10px;align-items:center;}
-.stock-dropdown{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--surface2);border:1px solid var(--accent);border-radius:12px;z-index:9999;box-shadow:0 16px 48px rgba(0,0,0,0.65);max-height:300px;overflow-y:auto;overflow-x:hidden;}
+.stock-dropdown{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--surface2);border:1px solid var(--accent);border-radius:12px;z-index:9999;box-shadow:0 16px 48px rgba(0,0,0,.65);max-height:300px;overflow-y:auto;}
 .stock-dropdown.show{display:block;}
 .stock-dropdown::-webkit-scrollbar{width:5px;}
 .stock-dropdown::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px;}
-.dropdown-count{padding:6px 16px;font-size:11px;color:var(--muted);background:var(--surface);border-bottom:1px solid var(--border);letter-spacing:.3px;position:sticky;top:0;}
+.dropdown-count{padding:6px 16px;font-size:11px;color:var(--muted);background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;}
 .dropdown-item{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s;gap:12px;}
 .dropdown-item:last-child{border-bottom:none;}
-.dropdown-item:hover{background:rgba(0,212,170,0.08);}
+.dropdown-item:hover{background:rgba(0,212,170,.08);}
 .dropdown-item-name{font-weight:700;font-size:14px;color:var(--text);font-family:'Noto Sans KR',sans-serif;white-space:normal;word-break:keep-all;flex:1;min-width:0;}
 .dropdown-item-meta{display:flex;align-items:center;gap:7px;flex-shrink:0;}
 .dropdown-item-code{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);white-space:nowrap;}
-.dropdown-item-mkt{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:rgba(79,142,247,0.12);color:var(--accent2);border:1px solid rgba(79,142,247,0.25);white-space:nowrap;}
+.dropdown-item-mkt{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:rgba(79,142,247,.12);color:var(--accent2);border:1px solid rgba(79,142,247,.25);white-space:nowrap;}
 .dropdown-loading{padding:20px 16px;text-align:center;color:var(--muted);font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;}
 .dropdown-spinner{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
-/* portfolio.html selected-chip 그대로 */
-.selected-chip{display:none;align-items:center;gap:10px;background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.3);border-radius:10px;padding:10px 16px;width:100%;}
+.selected-chip{display:none;align-items:center;gap:10px;background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.3);border-radius:10px;padding:10px 16px;width:100%;}
 .selected-chip.show{display:flex;}
 .chip-name{font-weight:700;font-size:15px;color:var(--text);font-family:'Noto Sans KR',sans-serif;}
 .chip-code{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
-.chip-mkt{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(79,142,247,0.12);color:var(--accent2);border:1px solid rgba(79,142,247,0.2);}
+.chip-mkt{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(79,142,247,.12);color:var(--accent2);border:1px solid rgba(79,142,247,.2);}
 .chip-clear{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;border-radius:4px;transition:color .2s;}
 .chip-clear:hover{color:var(--red);}
-/* ════════════════════════════════════ */
 
-/* ── 필 ── */
 .pills{display:flex;flex-wrap:wrap;gap:8px;}
 .pill{padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .2s;white-space:nowrap;}
 .pill:hover{border-color:var(--accent);color:var(--accent);}
 .pill.on{background:rgba(0,212,170,.12);border-color:rgba(0,212,170,.5);color:var(--accent);font-weight:700;}
 
-/* ── 연도 ── */
 .yrbtns{display:flex;flex-wrap:wrap;gap:8px;}
 .yrbtn{padding:7px 16px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .2s;}
 .yrbtn:hover{border-color:var(--accent2);color:var(--accent2);}
 .yrbtn.on{background:rgba(79,142,247,.12);border-color:rgba(79,142,247,.4);color:var(--accent2);}
 
-/* ── 버튼 ── */
 .btn{background:var(--accent);color:#000;border:none;border-radius:10px;padding:12px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .2s;white-space:nowrap;height:44px;}
 .btn:hover{background:#00f0c0;transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,212,170,.3);}
 .btn:active{transform:translateY(0);}
@@ -112,7 +97,6 @@ h1 em{font-style:normal;color:var(--accent);}
 .btn-sm{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .2s;}
 .btn-sm:hover{border-color:var(--accent);color:var(--accent);}
 
-/* ── 결과 ── */
 .res-panel{display:none;}
 .res-panel.show{display:block;}
 .co-hd{display:none;padding:24px;border-bottom:1px solid var(--border);}
@@ -124,7 +108,6 @@ h1 em{font-style:normal;color:var(--accent);}
 .co-period{font-size:12px;color:var(--muted);margin-top:4px;}
 .data-src{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.3);color:var(--accent);}
 
-/* ── KPI ── */
 .kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);}
 @media(min-width:600px){.kpi-grid{grid-template-columns:repeat(4,1fr);}}
 .kpi-item{padding:20px 18px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-width:0;}
@@ -132,7 +115,6 @@ h1 em{font-style:normal;color:var(--accent);}
 .kpi-val{font-size:clamp(12px,3vw,17px);font-weight:900;font-family:'JetBrains Mono',monospace;letter-spacing:-.5px;}
 .kpi-unit{font-size:10px;color:var(--muted);margin-top:3px;font-family:'JetBrains Mono',monospace;}
 
-/* ── 탭 ── */
 .sec-tabs{display:flex;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;}
 .sec-tabs::-webkit-scrollbar{display:none;}
 .sec-tab{padding:13px 20px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;background:none;border-left:none;border-right:none;border-top:none;font-family:'Noto Sans KR',sans-serif;}
@@ -147,7 +129,6 @@ h1 em{font-style:normal;color:var(--accent);}
 .yr-panel{display:none;}
 .yr-panel.on{display:block;}
 
-/* ── 테이블 ── */
 .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .tbl-wrap::-webkit-scrollbar{height:5px;}
 .tbl-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
@@ -164,15 +145,13 @@ tr:hover td{background:rgba(255,255,255,.018);}
 .td-neg{color:var(--accent2)!important;}
 .tbl-note{padding:12px 20px;font-size:11px;color:var(--muted);text-align:right;border-top:1px solid var(--border);}
 
-/* ── 로딩/에러 ── */
 .loading{display:none;padding:48px;text-align:center;color:var(--muted);flex-direction:column;align-items:center;gap:14px;}
 .loading.show{display:flex;}
 .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .9s linear infinite;}
-.load-step{font-size:11px;color:var(--muted);}
+.load-step{font-size:12px;color:var(--muted);}
 .err-box{display:none;margin:0 24px 24px;padding:16px 20px;background:rgba(255,79,107,.08);border:1px solid rgba(255,79,107,.25);border-radius:12px;color:var(--red);font-size:13px;gap:10px;align-items:flex-start;line-height:1.7;}
 .err-box.show{display:flex;}
 
-/* ── 토스트 ── */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);border:1px solid var(--accent);border-radius:10px;padding:12px 24px;font-size:13px;font-weight:600;color:var(--text);z-index:9999;transition:transform .3s ease;white-space:nowrap;pointer-events:none;}
 .toast.show{transform:translateX(-50%) translateY(0);}
 </style>
@@ -191,21 +170,21 @@ tr:hover td{background:rgba(255,255,255,.018);}
 </div>
 
 <div class="wrap">
-  <div class="badge">금융위원회 API · Google Apps Script</div>
+  <div class="badge">DART Open API · Google Apps Script</div>
   <h1>기업 <em>재무정보</em> 조회</h1>
-  <p class="subtitle">종목 검색 → 재무제표 선택 → 조회하면 Google Sheets에 자동 저장됩니다</p>
+  <p class="subtitle">종목 검색 → 조회 → Google Sheets 자동 저장 → 화면 표시</p>
 
-  <!-- ══ GAS 설정 카드 ══ -->
+  <!-- GAS 설정 카드 -->
   <div class="card" id="setupCard">
-    <div class="ctitle">⚙️ Google Apps Script 설정 (최초 1회)</div>
+    <div class="ctitle">⚙️ Google Apps Script 설정</div>
     <div class="cbody">
       <div class="notice">
-        <strong>Step 1.</strong> Google Sheets 새 파일 생성 → 확장 프로그램 → Apps Script<br>
-        <strong>Step 2.</strong> 기존 코드 전부 지우고 <code>apps_script.gs</code> 코드 전체 붙여넣기 후 저장<br>
-        <strong>Step 3.</strong> 배포 → 새 배포 → 유형: 웹 앱<br>
+        <strong>⚠️ 아직 이전 코드가 GAS에 남아있습니다. 반드시 교체 후 재배포하세요!</strong><br><br>
+        <strong>Step 1.</strong> Apps Script 편집기에서 기존 코드 전부 삭제<br>
+        <strong>Step 2.</strong> <code>apps_script.gs</code> 코드 전체 붙여넣기 → 저장(Ctrl+S)<br>
+        <strong>Step 3.</strong> 배포 → <strong>새 배포</strong> (기존 배포 수정 X, 반드시 새 배포)<br>
         &nbsp;&nbsp;• 실행 계정: <strong>나</strong> &nbsp;|&nbsp; 액세스: <strong>모든 사용자(익명 포함)</strong><br>
-        <strong>Step 4.</strong> 배포 완료 → 웹 앱 URL 복사 → 아래 입력창에 붙여넣기 → 연결 확인<br><br>
-        ⚠️ <strong>코드 수정 후엔 반드시 재배포</strong>(배포 → 배포 관리 → 수정)해야 적용됩니다.
+        <strong>Step 4.</strong> 새로 발급된 URL을 아래에 붙여넣기 → 연결 확인
       </div>
       <div>
         <label class="flabel">Google Apps Script 웹 앱 URL</label>
@@ -217,14 +196,12 @@ tr:hover td{background:rgba(255,255,255,.018);}
           <button class="btn" onclick="checkGas()" style="flex-shrink:0;">연결 확인</button>
         </div>
       </div>
-      <div id="gasCheckMsg" style="font-size:12px;color:var(--muted);display:none;"></div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-sm" onclick="document.getElementById('setupCard').style.display='none'">닫기</button>
-      </div>
+      <div id="gasMsg" style="font-size:12px;color:var(--muted);padding:4px 2px;display:none;line-height:1.6;"></div>
+      <button class="btn-sm" style="align-self:flex-start;" onclick="document.getElementById('setupCard').style.display='none'">닫기</button>
     </div>
   </div>
 
-  <!-- ══ 검색 카드 ══ -->
+  <!-- 검색 카드 -->
   <div class="card">
     <div class="ctitle">🔍 종목 검색 및 조회 설정</div>
     <div class="cbody">
@@ -238,7 +215,7 @@ tr:hover td{background:rgba(255,255,255,.018);}
               <input class="finput" type="text" id="chartSearchInput"
                 placeholder="종목명 또는 6자리 코드 입력 후 검색"
                 autocomplete="off"
-                onkeydown="if(event.key==='Enter')chartSearchStock(); if(event.key==='Escape')closeChartDropdown();"
+                onkeydown="if(event.key==='Enter')chartSearchStock(); if(event.key==='Escape')closeDD();"
                 onfocus="this.style.borderColor='var(--accent)'"
                 onblur="this.style.borderColor='var(--border)'">
               <div class="stock-dropdown" id="chartDropdown"></div>
@@ -248,26 +225,23 @@ tr:hover td{background:rgba(255,255,255,.018);}
         </div>
       </div>
 
-      <!-- selected-chip: portfolio.html 그대로 -->
       <div class="selected-chip" id="chartChip">
-        <span class="chip-name" id="chartChipName"></span>
-        <span class="chip-code" id="chartChipCode"></span>
-        <span class="chip-mkt"  id="chartChipMkt"></span>
-        <button class="chip-clear" onclick="clearChartStock()" title="선택 해제">✕</button>
+        <span class="chip-name" id="chipName"></span>
+        <span class="chip-code" id="chipCode"></span>
+        <span class="chip-mkt"  id="chipMkt"></span>
+        <button class="chip-clear" onclick="clearStock()">✕</button>
       </div>
 
-      <!-- 재무제표 종류 -->
       <div>
         <label class="flabel">재무제표 종류</label>
         <div class="pills" id="sjPills">
-          <button class="pill on" data-v="all" onclick="pickPill(this,'sjPills')">전체</button>
-          <button class="pill"    data-v="IS"  onclick="pickPill(this,'sjPills')">손익계산서</button>
-          <button class="pill"    data-v="BS"  onclick="pickPill(this,'sjPills')">재무상태표</button>
-          <button class="pill"    data-v="CF"  onclick="pickPill(this,'sjPills')">현금흐름표</button>
+          <button class="pill on" data-v="all" onclick="pickSj(this)">전체</button>
+          <button class="pill"    data-v="IS"  onclick="pickSj(this)">손익계산서</button>
+          <button class="pill"    data-v="BS"  onclick="pickSj(this)">재무상태표</button>
+          <button class="pill"    data-v="CF"  onclick="pickSj(this)">현금흐름표</button>
         </div>
       </div>
 
-      <!-- 보고서 유형 / 연결구분 -->
       <div class="row2">
         <div>
           <label class="flabel">보고서 유형</label>
@@ -283,13 +257,12 @@ tr:hover td{background:rgba(255,255,255,.018);}
         <div>
           <label class="flabel">연결 / 별도</label>
           <div class="pills" id="fsPills">
-            <button class="pill on" data-v="CFS" onclick="pickPill(this,'fsPills')">연결 (CFS)</button>
-            <button class="pill"    data-v="OFS" onclick="pickPill(this,'fsPills')">별도 (OFS)</button>
+            <button class="pill on" data-v="CFS" onclick="pickFs(this)">연결 (CFS)</button>
+            <button class="pill"    data-v="OFS" onclick="pickFs(this)">별도 (OFS)</button>
           </div>
         </div>
       </div>
 
-      <!-- 조회 연도 -->
       <div>
         <label class="flabel">조회 연도 (복수 선택 가능)</label>
         <div class="yrbtns" id="yrbtns"></div>
@@ -299,28 +272,25 @@ tr:hover td{background:rgba(255,255,255,.018);}
     </div>
   </div>
 
-  <!-- ══ 결과 카드 ══ -->
+  <!-- 결과 카드 -->
   <div class="card res-panel" id="resPanel">
     <div class="co-hd" id="coHd">
-      <div class="co-name"   id="coName"></div>
+      <div class="co-name" id="coName"></div>
       <div class="co-meta">
         <span class="co-code" id="coCode"></span>
         <span class="co-mkt"  id="coMkt"></span>
-        <span class="data-src">● 금융위원회 API</span>
+        <span class="data-src">● DART Open API</span>
       </div>
       <div class="co-period" id="coPeriod"></div>
     </div>
-
     <div class="kpi-grid"   id="kpiGrid"></div>
     <div class="sec-tabs"   id="secTabs"></div>
     <div id="secContents"></div>
-
     <div class="loading" id="loading">
       <div class="spinner"></div>
       <span>재무정보를 불러오는 중...</span>
       <span class="load-step" id="loadStep"></span>
     </div>
-
     <div class="err-box" id="errBox">
       <span style="flex-shrink:0">⚠️</span>
       <div id="errMsg"></div>
@@ -333,17 +303,19 @@ tr:hover td{background:rgba(255,255,255,.018);}
 <script>
 'use strict';
 
-/* ════════ API 상수 (portfolio.html 동일) ════════ */
-const FSS_API_KEY = 'dc8294cd0177c5d51b45be29652fb691c4b18e055f22c87b0967ca1a78c7df0a';
-const FSS_URL     = 'https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo';
+/* ─── 상수 ─── */
+const FSS_KEY  = 'dc8294cd0177c5d51b45be29652fb691c4b18e055f22c87b0967ca1a78c7df0a';
+const FSS_URL  = 'https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo';
+// ★ GAS URL 미리 설정 (변경하려면 설정 카드에서 수정)
+const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwYCPVtP49ux3ldv7jW7cFBaa_lCHeG9UcLFO3R3_rnBErc6EtCwS6MxarsM10-0TRV2Q/exec';
 
-/* ════════ 상태 ════════ */
-let chartStock = null;
-let selSj = 'all', selFs = 'CFS', selYrs = [];
-let GAS_URL = '';
+/* ─── 상태 ─── */
+let stock  = null;
+let selSj  = 'all', selFs = 'CFS', selYrs = [];
+let GAS_URL = DEFAULT_GAS_URL;
 
-/* ════════ 연도 버튼 초기화 ════════ */
-(function() {
+/* ─── 연도 버튼 ─── */
+(function(){
   const wrap = document.getElementById('yrbtns');
   const now  = new Date().getFullYear();
   for (let y = now - 1; y >= now - 5; y--) {
@@ -362,137 +334,119 @@ let GAS_URL = '';
   }
 })();
 
-/* ════════ GAS URL 저장/복원 ════════ */
-(function() {
-  try {
-    const saved = localStorage.getItem('finstat_gas_url') || '';
-    if (saved) {
-      GAS_URL = saved;
-      document.getElementById('gasInput').value = saved;
-      checkGas();
-    }
-  } catch(e) {}
+/* ─── GAS URL 관리 ─── */
+(function(){
+  const saved = localStorage.getItem('finstat_gas_url') || DEFAULT_GAS_URL;
+  GAS_URL = saved;
+  document.getElementById('gasInput').value = saved;
+  checkGas();
 })();
 
 function saveGasUrl() {
   GAS_URL = document.getElementById('gasInput').value.trim();
-  try { localStorage.setItem('finstat_gas_url', GAS_URL); } catch(e) {}
+  localStorage.setItem('finstat_gas_url', GAS_URL);
 }
 
-/* ════════ GAS 연결 확인 (JSONP) ════════ */
+/* ─── GAS 연결 확인 ─── */
 function checkGas() {
-  GAS_URL = document.getElementById('gasInput').value.trim() || GAS_URL;
-  if (!GAS_URL) { setGasUi('err', 'URL을 입력하세요'); return; }
-
+  GAS_URL = document.getElementById('gasInput').value.trim() || DEFAULT_GAS_URL;
   setGasUi('', '확인 중...');
-  const msg = document.getElementById('gasCheckMsg');
+  const msg = document.getElementById('gasMsg');
   msg.style.display = 'block';
   msg.style.color   = 'var(--muted)';
-  msg.textContent   = '🔄 GAS 서버에 연결 중...';
+  msg.textContent   = '🔄 연결 확인 중...';
 
-  jsonpCall(GAS_URL, { action: 'health' }, function(data) {
-    if (data && data.success) {
+  jsonp(GAS_URL, { action: 'health' }, function(d) {
+    if (d && d.success) {
       setGasUi('ok', '● GAS 연결됨');
       msg.style.color   = 'var(--accent)';
-      msg.textContent   = '✅ 연결 성공! ' + (data.message || '');
+      msg.textContent   = '✅ 연결 성공! ' + (d.message || '');
     } else {
-      setGasUi('err', '응답 없음');
+      setGasUi('err', 'GAS 오류');
       msg.style.color   = 'var(--red)';
-      msg.textContent   = '❌ GAS가 응답했지만 오류: ' + (data && data.error ? data.error : '알 수 없음');
+      msg.textContent   = '❌ GAS 응답 오류: ' + JSON.stringify(d);
     }
-  }, function(errMsg) {
+  }, function(e) {
     setGasUi('err', '연결 실패');
     msg.style.color   = 'var(--red)';
-    msg.textContent   = '❌ ' + errMsg + ' → URL 확인 후 재배포하세요.';
+    msg.textContent   = '❌ ' + e + '\n→ apps_script.gs 새 코드로 교체 후 재배포 필요!';
   });
 }
 
 function setGasUi(type, txt) {
   const btn = document.getElementById('gasBtn');
-  const dot = document.getElementById('gasDot');
   document.getElementById('gasTxt').textContent = txt;
+  document.getElementById('gasDot').className   = 'gas-dot' + (type === 'ok' ? ' on' : '');
   btn.className = 'gas-pill' + (type ? ' ' + type : '');
-  dot.className = 'gas-dot' + (type === 'ok' ? ' on' : '');
 }
 
-/* ════════ JSONP 공통 호출 함수 ════════ */
-let _jsonpSeq = 0;
-function jsonpCall(baseUrl, params, onSuccess, onError, timeoutMs) {
-  timeoutMs = timeoutMs || 20000;
-  const cbName = '__gasJsonp_' + (++_jsonpSeq) + '_' + Date.now();
-  const qs = Object.entries(params)
-    .map(([k, v]) => k + '=' + encodeURIComponent(v))
-    .join('&');
-  const url = baseUrl + '?' + qs + '&callback=' + cbName;
+/* ─── JSONP 공통 함수 ─── */
+let _seq = 0;
+function jsonp(url, params, onOk, onErr, ms) {
+  ms = ms || 25000;
+  const cb   = '__cb_' + (++_seq) + '_' + Date.now();
+  const qs   = Object.entries(params).map(([k,v]) => k + '=' + encodeURIComponent(v)).join('&');
+  const src  = url + '?' + qs + '&callback=' + cb;
+  let done   = false;
+  const el   = document.createElement('script');
 
-  let done = false;
-  const script = document.createElement('script');
-
-  window[cbName] = function(data) {
-    if (done) return;
-    done = true;
-    clearTimeout(timer);
-    delete window[cbName];
-    if (document.body.contains(script)) document.body.removeChild(script);
-    onSuccess(data);
+  window[cb] = function(d) {
+    if (done) return; done = true;
+    clearTimeout(t);
+    delete window[cb];
+    el.parentNode && el.parentNode.removeChild(el);
+    onOk(d);
   };
-
-  script.onerror = function() {
-    if (done) return;
-    done = true;
-    clearTimeout(timer);
-    delete window[cbName];
-    if (document.body.contains(script)) document.body.removeChild(script);
-    onError('스크립트 로드 실패. GAS URL을 확인하세요.');
+  el.onerror = function() {
+    if (done) return; done = true;
+    clearTimeout(t);
+    delete window[cb];
+    el.parentNode && el.parentNode.removeChild(el);
+    onErr('스크립트 로드 실패');
   };
-
-  const timer = setTimeout(function() {
-    if (done) return;
-    done = true;
-    delete window[cbName];
-    if (document.body.contains(script)) document.body.removeChild(script);
-    onError('응답 시간 초과 (' + (timeoutMs/1000) + '초). 다시 시도하세요.');
-  }, timeoutMs);
-
-  script.src = url;
-  document.body.appendChild(script);
+  const t = setTimeout(function() {
+    if (done) return; done = true;
+    delete window[cb];
+    el.parentNode && el.parentNode.removeChild(el);
+    onErr('응답 시간 초과 (' + (ms/1000) + '초)');
+  }, ms);
+  el.src = src;
+  document.body.appendChild(el);
 }
 
-/* ════════ 필 선택 ════════ */
-function pickPill(btn, groupId) {
-  document.querySelectorAll('#' + groupId + ' .pill').forEach(p => p.classList.remove('on'));
-  btn.classList.add('on');
-  if (groupId === 'sjPills') selSj = btn.dataset.v;
-  if (groupId === 'fsPills') selFs = btn.dataset.v;
+/* ─── 필 선택 ─── */
+function pickSj(btn) {
+  document.querySelectorAll('#sjPills .pill').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on'); selSj = btn.dataset.v;
+}
+function pickFs(btn) {
+  document.querySelectorAll('#fsPills .pill').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on'); selFs = btn.dataset.v;
 }
 
-/* ════════════════════════════════════════════
-   portfolio.html 차트탭 종목검색 — 그대로 이식
-   ════════════════════════════════════════════ */
+/* ──────────────────────────────────────────
+   portfolio.html 차트탭 종목검색 — 그대로
+   ────────────────────────────────────────── */
 document.addEventListener('click', e => {
-  const wrap = document.querySelector('.stock-search-wrap');
-  const btn  = document.getElementById('chartSearchBtn');
-  if (wrap && !wrap.contains(e.target) && btn && !btn.contains(e.target)) closeChartDropdown();
+  const w = document.querySelector('.stock-search-wrap');
+  const b = document.getElementById('chartSearchBtn');
+  if (w && !w.contains(e.target) && b && !b.contains(e.target)) closeDD();
 });
-
-function closeChartDropdown() {
-  document.getElementById('chartDropdown').classList.remove('show');
-}
+function closeDD() { document.getElementById('chartDropdown').classList.remove('show'); }
 
 async function chartSearchStock() {
   const q = document.getElementById('chartSearchInput').value.trim();
   if (!q) return;
-  const dd  = document.getElementById('chartDropdown');
+  const dd = document.getElementById('chartDropdown');
   const btn = document.getElementById('chartSearchBtn');
   dd.innerHTML = '<div class="dropdown-loading"><div class="dropdown-spinner"></div> 검색 중...</div>';
   dd.classList.add('show');
   btn.disabled = true;
   try {
-    const params = { numOfRows: 50, pageNo: 1 };
-    if (/^\d{6}$/.test(q)) params.likeSrtnCd = q;
-    else params.likeItmsNm = q;
-    const qs   = new URLSearchParams({ serviceKey: FSS_API_KEY, resultType: 'json', ...params });
-    const resp = await fetch(`${FSS_URL}?${qs}`);
+    const p = { numOfRows: 50, pageNo: 1 };
+    if (/^\d{6}$/.test(q)) p.likeSrtnCd = q; else p.likeItmsNm = q;
+    const qs   = new URLSearchParams({ serviceKey: FSS_KEY, resultType: 'json', ...p });
+    const resp = await fetch(FSS_URL + '?' + qs);
     const data = await resp.json();
     const items = data?.response?.body?.items?.item;
     const total = parseInt(data?.response?.body?.totalCount || 0);
@@ -501,105 +455,99 @@ async function chartSearchStock() {
     const seen = new Map();
     list.forEach(it => { if (!seen.has(it.srtnCd) || it.basDt > seen.get(it.srtnCd).basDt) seen.set(it.srtnCd, it); });
     const uniq = [...seen.values()];
-    dd.innerHTML = `<div class="dropdown-count">검색 결과 ${uniq.length}건 — 종목을 선택하세요</div>`
+    dd.innerHTML = `<div class="dropdown-count">검색 결과 ${uniq.length}건 — 선택하세요</div>`
       + uniq.map(it => {
-          const nm = it.itmsNm.replace(/'/g,"&#39;");
-          return `<div class="dropdown-item" onclick="selectChartStock('${nm}','${it.srtnCd}','${it.mrktCtg||''}')">
+          const nm = it.itmsNm.replace(/'/g, "&#39;");
+          return `<div class="dropdown-item" onclick="pickStock('${nm}','${it.srtnCd}','${it.mrktCtg||''}')">
             <span class="dropdown-item-name">${it.itmsNm}</span>
             <span class="dropdown-item-meta">
               <span class="dropdown-item-code">${it.srtnCd}</span>
-              ${it.mrktCtg?`<span class="dropdown-item-mkt">${it.mrktCtg}</span>`:''}
+              ${it.mrktCtg ? `<span class="dropdown-item-mkt">${it.mrktCtg}</span>` : ''}
             </span>
           </div>`;
         }).join('');
   } catch(e) {
     dd.innerHTML = `<div class="dropdown-loading">오류: ${e.message}</div>`;
-  } finally {
-    btn.disabled = false;
-  }
+  } finally { btn.disabled = false; }
 }
 
-function selectChartStock(name, code, market) {
-  chartStock = { name, code, market };
-  closeChartDropdown();
+function pickStock(name, code, market) {
+  stock = { name, code, market };
+  closeDD();
   document.getElementById('chartSearchInput').value = '';
-  document.getElementById('chartChipName').textContent = name;
-  document.getElementById('chartChipCode').textContent = code;
-  document.getElementById('chartChipMkt').textContent  = market;
+  document.getElementById('chipName').textContent = name;
+  document.getElementById('chipCode').textContent = code;
+  document.getElementById('chipMkt').textContent  = market;
   document.getElementById('chartChip').classList.add('show');
   showToast(name + ' 선택됨');
 }
-
-function clearChartStock() {
-  chartStock = null;
+function clearStock() {
+  stock = null;
   document.getElementById('chartChip').classList.remove('show');
   document.getElementById('chartSearchInput').value = '';
   document.getElementById('chartSearchInput').focus();
 }
-/* ════════════════════════════════════════════ */
+/* ────────────────────────────────────────── */
 
-/* ════════ 재무정보 조회 ════════ */
+/* ─── 재무정보 조회 ─── */
 function doFetch() {
-  if (!chartStock)  { showToast('종목을 먼저 선택하세요', 'var(--red)'); return; }
+  if (!stock)         { showToast('종목을 먼저 선택하세요', 'var(--red)'); return; }
   if (!selYrs.length) { showToast('연도를 선택하세요', 'var(--red)'); return; }
-  if (!GAS_URL)     { showToast('GAS URL을 먼저 입력하세요', 'var(--red)'); return; }
+  if (!GAS_URL)       { showToast('GAS URL을 설정하세요', 'var(--red)'); return; }
 
-  const reprt = document.getElementById('reprt').value;
-  const rName = {'11011':'사업보고서(연간)','11012':'반기보고서','11013':'1분기보고서','11014':'3분기보고서'}[reprt];
-  const sName = {all:'전체',IS:'손익계산서',BS:'재무상태표',CF:'현금흐름표'}[selSj];
+  const reprt  = document.getElementById('reprt').value;
+  const rName  = {'11011':'사업보고서(연간)','11012':'반기보고서','11013':'1분기보고서','11014':'3분기보고서'}[reprt];
+  const sName  = {all:'전체',IS:'손익계산서',BS:'재무상태표',CF:'현금흐름표'}[selSj];
 
   document.getElementById('resPanel').classList.add('show');
   document.getElementById('coHd').classList.add('show');
-  document.getElementById('coName').textContent   = chartStock.name;
-  document.getElementById('coCode').textContent   = chartStock.code;
-  document.getElementById('coMkt').textContent    = chartStock.market;
+  document.getElementById('coName').textContent   = stock.name;
+  document.getElementById('coCode').textContent   = stock.code;
+  document.getElementById('coMkt').textContent    = stock.market;
   document.getElementById('coPeriod').textContent = selYrs.join(', ') + '년 · ' + rName + ' · ' + sName + ' · ' + (selFs === 'CFS' ? '연결' : '별도');
 
   clearRes();
-  setLoading(true, 'Google Apps Script 경유로 재무데이터 조회 중...');
+  setLoading(true, 'GAS → DART API 조회 중...');
   document.getElementById('resPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-  const params = {
-    crno:      chartStock.code,
-    reprtCode: reprt,
-    fsDiv:     selFs,
-    sjDiv:     selSj,
-  };
+  const base = { stockCode: stock.code, reprtCode: reprt, fsDiv: selFs, sjDiv: selSj };
 
   if (selYrs.length === 1) {
-    params.action  = 'financial';
-    params.bizYear = selYrs[0];
-    jsonpCall(GAS_URL, params, function(d) {
-      setLoading(false);
-      if (!d || !d.success) { showErr(d ? d.error : '응답 없음'); return; }
-      renderSingle(d.data, selYrs[0]);
-    }, function(e) { setLoading(false); showErr(e); });
+    jsonp(GAS_URL, { ...base, action: 'financial', bizYear: selYrs[0] },
+      function(d) {
+        setLoading(false);
+        if (!d || !d.success) { showErr(d ? d.error : '응답 없음'); return; }
+        renderSingle(d.data, selYrs[0]);
+      },
+      function(e) { setLoading(false); showErr(e); }
+    );
   } else {
-    params.action = 'multiyear';
-    params.years  = selYrs.join(',');
-    jsonpCall(GAS_URL, params, function(d) {
-      setLoading(false);
-      if (!d) { showErr('응답 없음'); return; }
-      renderMulti(d.data || {}, d.errors || {}, selYrs);
-    }, function(e) { setLoading(false); showErr(e); });
+    jsonp(GAS_URL, { ...base, action: 'multiyear', years: selYrs.join(',') },
+      function(d) {
+        setLoading(false);
+        if (!d) { showErr('응답 없음'); return; }
+        renderMulti(d.data || {}, d.errors || {}, selYrs);
+      },
+      function(e) { setLoading(false); showErr(e); }
+    );
   }
 }
 
-/* ════════ 렌더링 ════════ */
-const SJ_NAMES = {BS:'재무상태표',IS:'손익계산서',CF:'현금흐름표',CIS:'포괄손익계산서',SCE:'자본변동표'};
+/* ─── 렌더링 ─── */
+const SJ_NAMES = { BS:'재무상태표', IS:'손익계산서', CIS:'포괄손익계산서', CF:'현금흐름표', SCE:'자본변동표' };
 const SJ_ORDER = ['BS','IS','CIS','CF','SCE'];
-const KPI_KEYS = ['자산총계','매출액','영업이익','당기순이익','부채총계','자본총계'];
+const KPI_NMS  = ['자산총계','매출액','영업이익','당기순이익','부채총계','자본총계'];
 
 function renderSingle(items, year) {
-  if (!items || !items.length) { showErr('데이터가 없습니다. 종목코드와 연도를 확인하세요.'); return; }
+  if (!items || !items.length) { showErr('데이터가 없습니다. 연도·보고서 유형·연결/별도를 바꿔보세요.'); return; }
   const yr = parseInt(year);
-  const G  = groupBySj(items);
+  const G  = grp(items);
   renderKPI(items);
-  const hasPrev2 = items.some(it => it.bfefrmtrm_amount && it.bfefrmtrm_amount !== '-');
+  const p2 = items.some(it => it.bfefrmtrm_amount && it.bfefrmtrm_amount !== '-');
   let tabs = '', panels = '';
   G.order.forEach((g, i) => {
     tabs   += `<button class="sec-tab ${i===0?'on':''}" onclick="swTab(this,${i})">${SJ_NAMES[g]||g}</button>`;
-    panels += `<div class="sec-panel ${i===0?'on':''}" id="sp-${i}">${buildTable(G.groups[g], yr, hasPrev2)}</div>`;
+    panels += `<div class="sec-panel ${i===0?'on':''}" id="sp-${i}">${tbl(G.groups[g], yr, p2)}</div>`;
   });
   document.getElementById('secTabs').innerHTML     = tabs;
   document.getElementById('secContents').innerHTML = panels;
@@ -615,63 +563,62 @@ function renderMulti(byYear, errors, years) {
       yrPanels += `<div class="yr-panel ${yi===0?'on':''}" id="yp-${yi}"><div style="padding:32px 24px;color:var(--muted);font-size:13px;">⚠️ ${yr}년: ${errors[yr]||'데이터 없음'}</div></div>`;
       return;
     }
-    const y = parseInt(yr);
-    const G = groupBySj(items);
-    const hasPrev2 = items.some(it => it.bfefrmtrm_amount && it.bfefrmtrm_amount !== '-');
-    let iTabs = '', iPanels = '';
+    const y = parseInt(yr), G = grp(items);
+    const p2 = items.some(it => it.bfefrmtrm_amount && it.bfefrmtrm_amount !== '-');
+    let iT = '', iP = '';
     G.order.forEach((g, gi) => {
-      iTabs   += `<button class="sec-tab ${gi===0?'on':''}" onclick="swInner(this,${yi},${gi})">${SJ_NAMES[g]||g}</button>`;
-      iPanels += `<div class="sec-panel ${gi===0?'on':''}" id="ip-${yi}-${gi}">${buildTable(G.groups[g], y, hasPrev2)}</div>`;
+      iT += `<button class="sec-tab ${gi===0?'on':''}" onclick="swIn(this,${yi},${gi})">${SJ_NAMES[g]||g}</button>`;
+      iP += `<div class="sec-panel ${gi===0?'on':''}" id="ip-${yi}-${gi}">${tbl(G.groups[g], y, p2)}</div>`;
     });
-    yrPanels += `<div class="yr-panel ${yi===0?'on':''}" id="yp-${yi}"><div class="sec-tabs">${iTabs}</div>${iPanels}</div>`;
+    yrPanels += `<div class="yr-panel ${yi===0?'on':''}" id="yp-${yi}"><div class="sec-tabs">${iT}</div>${iP}</div>`;
   });
   document.getElementById('secTabs').innerHTML     = `<div class="yr-tabs">${yrTabs}</div>`;
   document.getElementById('secContents').innerHTML = yrPanels;
 }
 
-function groupBySj(items) {
+function grp(items) {
   const groups = {}, order = [];
   items.forEach(it => {
-    const g = it.sjDiv || it.sj_div || 'ETC';
+    const g = it.sj_div || 'ETC';
     if (!groups[g]) { groups[g] = []; order.push(g); }
     groups[g].push(it);
   });
-  order.sort((a, b) => (SJ_ORDER.indexOf(a) < 0 ? 99 : SJ_ORDER.indexOf(a)) - (SJ_ORDER.indexOf(b) < 0 ? 99 : SJ_ORDER.indexOf(b)));
+  order.sort((a,b) => (SJ_ORDER.indexOf(a)<0?99:SJ_ORDER.indexOf(a)) - (SJ_ORDER.indexOf(b)<0?99:SJ_ORDER.indexOf(b)));
   return { groups, order };
 }
 
-function buildTable(rows, yr, hasPrev2) {
+function tbl(rows, yr, p2) {
   return `<div class="tbl-wrap"><table>
     <thead><tr>
       <th>계정과목</th>
-      <th>당기 (${yr})</th><th>전기 (${yr-1})</th>
-      ${hasPrev2 ? `<th>전전기 (${yr-2})</th>` : ''}
+      <th>${yr}년 (당기)</th><th>${yr-1}년 (전기)</th>
+      ${p2 ? `<th>${yr-2}년 (전전기)</th>` : ''}
       <th>증감액</th><th>증감률</th>
     </tr></thead>
-    <tbody>${rows.map(it => buildRow(it, hasPrev2)).join('')}</tbody>
+    <tbody>${rows.map(it => row(it, p2)).join('')}</tbody>
   </table></div>
-  <div class="tbl-note">출처: 금융위원회 Open API · Google Sheets 저장 완료</div>`;
+  <div class="tbl-note">출처: DART 전자공시시스템 · Google Sheets 저장 완료 · 단위: 원</div>`;
 }
 
-function buildRow(it, hasPrev2) {
-  const nm    = it.acntNm   || it.account_nm   || '-';
-  const curr  = it.thstrm   || it.thstrm_amount || '';
-  const prev  = it.frmtrm   || it.frmtrm_amount || '';
-  const prev2 = it.bfefrmtrm|| it.bfefrmtrm_amount || '';
-  const detail= it.acntDtl  || it.account_detail || '';
-  const v1    = parseAmt(curr), v2 = parseAmt(prev);
-  const diff  = (v1!==null && v2!==null) ? v1-v2 : null;
-  const pct   = (diff!==null && v2!==null && v2!==0) ? ((diff/Math.abs(v2))*100).toFixed(1) : null;
-  const isIn  = detail && detail !== '-' && detail !== '';
+function row(it, p2) {
+  const nm    = it.account_nm || '-';
+  const curr  = it.thstrm_amount  || '';
+  const prev  = it.frmtrm_amount  || '';
+  const prev2 = it.bfefrmtrm_amount || '';
+  const det   = it.account_detail || '';
+  const v1    = amt(curr), v2 = amt(prev);
+  const diff  = v1!==null && v2!==null ? v1-v2 : null;
+  const pct   = diff!==null && v2!==null && v2!==0 ? ((diff/Math.abs(v2))*100).toFixed(1) : null;
+  const isIn  = det && det !== '-' && det !== '';
   const isTot = !isIn;
   const c1    = v1!==null && v1<0 ? 'td-neg' : '';
   const cd    = diff===null ? '' : diff>0 ? 'td-pos' : diff<0 ? 'td-neg' : '';
   return `<tr>
     <td class="${isIn?'td-indent':''} ${isTot?'td-total':''}">${nm}</td>
-    <td class="${c1} ${isTot?'td-total':''}">${fmtMoney(curr)}</td>
-    <td class="${isTot?'td-total':''}">${fmtMoney(prev)}</td>
-    ${hasPrev2?`<td class="${isTot?'td-total':''}">${fmtMoney(prev2)}</td>`:''}
-    <td class="${cd} ${isTot?'td-total':''}">${diff!==null?(diff>=0?'+':'')+fmtMoney(String(diff)):'-'}</td>
+    <td class="${c1} ${isTot?'td-total':''}">${mon(curr)}</td>
+    <td class="${isTot?'td-total':''}">${mon(prev)}</td>
+    ${p2 ? `<td class="${isTot?'td-total':''}">${mon(prev2)}</td>` : ''}
+    <td class="${cd} ${isTot?'td-total':''}">${diff!==null?(diff>=0?'+':'')+mon(String(diff)):'-'}</td>
     <td class="${cd} ${isTot?'td-total':''}">${pct!==null?(diff>=0?'+':'')+pct+'%':'-'}</td>
   </tr>`;
 }
@@ -679,70 +626,71 @@ function buildRow(it, hasPrev2) {
 function renderKPI(items) {
   const seen = {}, kpi = [];
   items.forEach(it => {
-    const nm = it.acntNm || it.account_nm || '';
-    const v  = it.thstrm || it.thstrm_amount || '';
-    if (KPI_KEYS.includes(nm) && !seen[nm] && v && v !== '-') { kpi.push({label:nm,val:v}); seen[nm]=true; }
+    const nm = it.account_nm || '';
+    const v  = it.thstrm_amount || '';
+    if (KPI_NMS.includes(nm) && !seen[nm] && v && v !== '-') { kpi.push({nm, v}); seen[nm] = true; }
   });
   if (!kpi.length) {
-    items.filter(it=>(it.thstrm||it.thstrm_amount)&&(it.thstrm||it.thstrm_amount)!=='-')
-      .slice(0,4).forEach(it=>kpi.push({label:it.acntNm||it.account_nm||'',val:it.thstrm||it.thstrm_amount||''}));
+    items.filter(it => it.thstrm_amount && it.thstrm_amount !== '-').slice(0,4)
+      .forEach(it => kpi.push({ nm: it.account_nm||'', v: it.thstrm_amount||'' }));
   }
-  document.getElementById('kpiGrid').innerHTML = kpi.slice(0,4).map(({label,val}) => {
-    const v = parseAmt(val), cls = v>0?'td-pos':v<0?'td-neg':'';
-    return `<div class="kpi-item"><div class="kpi-label">${label}</div><div class="kpi-val ${cls}">${fmtBig(v)}</div><div class="kpi-unit">${fmtMoney(val)}원</div></div>`;
+  document.getElementById('kpiGrid').innerHTML = kpi.slice(0,4).map(({nm, v}) => {
+    const n = amt(v), cls = n>0?'td-pos':n<0?'td-neg':'';
+    return `<div class="kpi-item">
+      <div class="kpi-label">${nm}</div>
+      <div class="kpi-val ${cls}">${big(n)}</div>
+      <div class="kpi-unit">${mon(v)}원</div>
+    </div>`;
   }).join('');
 }
 
-/* ── 탭 전환 ── */
-function swTab(btn, idx) {
-  btn.parentElement.querySelectorAll('.sec-tab').forEach((t,i)=>t.classList.toggle('on',i===idx));
-  document.querySelectorAll('#secContents>.sec-panel').forEach((p,i)=>p.classList.toggle('on',i===idx));
+/* ─── 탭 전환 ─── */
+function swTab(btn, i) {
+  btn.parentElement.querySelectorAll('.sec-tab').forEach((t,j) => t.classList.toggle('on', j===i));
+  document.querySelectorAll('#secContents>.sec-panel').forEach((p,j) => p.classList.toggle('on', j===i));
 }
-function swYr(btn, idx) {
-  btn.parentElement.querySelectorAll('.yr-tab').forEach((t,i)=>t.classList.toggle('on',i===idx));
-  document.querySelectorAll('.yr-panel').forEach((p,i)=>p.classList.toggle('on',i===idx));
+function swYr(btn, i) {
+  btn.parentElement.querySelectorAll('.yr-tab').forEach((t,j) => t.classList.toggle('on', j===i));
+  document.querySelectorAll('.yr-panel').forEach((p,j) => p.classList.toggle('on', j===i));
 }
-function swInner(btn, yi, gi) {
-  const panel = document.getElementById('yp-'+yi);
-  panel.querySelectorAll('.sec-tab').forEach((t,i)=>t.classList.toggle('on',i===gi));
-  panel.querySelectorAll('.sec-panel').forEach((p,i)=>p.classList.toggle('on',i===gi));
+function swIn(btn, yi, gi) {
+  const panel = document.getElementById('yp-' + yi);
+  panel.querySelectorAll('.sec-tab').forEach((t,j) => t.classList.toggle('on', j===gi));
+  panel.querySelectorAll('.sec-panel').forEach((p,j) => p.classList.toggle('on', j===gi));
 }
 
-/* ── 유틸 ── */
-function parseAmt(v) {
-  if (!v||v==='-') return null;
-  const n = parseInt(String(v).replace(/,/g,''));
-  return isNaN(n)?null:n;
-}
-function fmtMoney(v) { const n=parseAmt(v); return n===null?'-':n.toLocaleString('ko-KR'); }
-function fmtBig(n) {
-  if(n===null) return '-';
-  const abs=Math.abs(n),sign=n<0?'-':'';
-  if(abs>=1e12) return sign+(abs/1e12).toFixed(1)+'조';
-  if(abs>=1e8)  return sign+Math.round(abs/1e8).toLocaleString('ko-KR')+'억';
+/* ─── 유틸 ─── */
+function amt(v) { if (!v || v==='-') return null; const n=parseInt(String(v).replace(/,/g,'')); return isNaN(n)?null:n; }
+function mon(v) { const n=amt(v); return n===null?'-':n.toLocaleString('ko-KR'); }
+function big(n) {
+  if (n===null) return '-';
+  const a=Math.abs(n), s=n<0?'-':'';
+  if(a>=1e12) return s+(a/1e12).toFixed(1)+'조';
+  if(a>=1e8)  return s+Math.round(a/1e8).toLocaleString('ko-KR')+'억';
   return n.toLocaleString('ko-KR');
 }
 function clearRes() {
   document.getElementById('errBox').classList.remove('show');
-  document.getElementById('kpiGrid').innerHTML='';
-  document.getElementById('secTabs').innerHTML='';
-  document.getElementById('secContents').innerHTML='';
+  document.getElementById('kpiGrid').innerHTML = '';
+  document.getElementById('secTabs').innerHTML = '';
+  document.getElementById('secContents').innerHTML = '';
 }
-function setLoading(v,msg) {
-  document.getElementById('loading').classList.toggle('show',v);
-  document.getElementById('loadStep').textContent=msg||'';
+function setLoading(v, msg) {
+  document.getElementById('loading').classList.toggle('show', v);
+  document.getElementById('loadStep').textContent = msg || '';
 }
 function showErr(msg) {
   document.getElementById('errMsg').innerHTML = msg
-    +'<br><small style="opacity:.7;margin-top:4px;display:block">GAS URL 확인 → 재배포 → 연결 확인 버튼을 다시 눌러보세요.</small>';
+    + '<br><small style="opacity:.7;margin-top:6px;display:block">'
+    + '→ apps_script.gs 새 코드로 교체 → 저장 → <strong>새 배포</strong> → 새 URL로 연결 확인</small>';
   document.getElementById('errBox').classList.add('show');
 }
 let _tt;
-function showToast(msg,color){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.style.borderColor=color||'var(--accent)';
-  t.classList.add('show');clearTimeout(_tt);
-  _tt=setTimeout(()=>t.classList.remove('show'),2600);
+function showToast(msg, color) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.borderColor = color || 'var(--accent)';
+  t.classList.add('show'); clearTimeout(_tt);
+  _tt = setTimeout(() => t.classList.remove('show'), 2600);
 }
 </script>
 </body>
