@@ -3136,7 +3136,7 @@ function ccRenderTimeline() {
   items.sort((a,b) => a.pd - b.pd);
 
   const totalDiv = items.reduce((a,x) => a+x.totalDiv, 0);
-  const totalAnnDiv = items.reduce((a,x) => a+(Number(x.s.qty)||0)*(Number(x.entry.annDiv)||0), 0);
+  const totalAnnDiv = items.reduce((a,x) => a+(Number(x.qty)||0)*(Number(x.entry.annDiv)||0), 0);
 
   if (items.length > 0) {
     sumEl.innerHTML = [
