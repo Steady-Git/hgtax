@@ -2686,7 +2686,7 @@ window.addEventListener('resize', resizeCharts);
 
 
 /* ═══════════════════ COVERED CALL STATE & CONSTANTS ═══════════════════ */
-const CC_GSHEET_URL = 'https://script.google.com/macros/s/AKfycbyj-IhIMUzGZc7eak0aMPx6doEeaLS7sxCRJxQ6E9teXNoru5Je0zudgArCh-Lndb5x/exec';
+const CC_GSHEET_URL = 'https://script.google.com/macros/s/AKfycbzzmWTOWPJZCQw4Vp-cMEebd8IM7_zvvV9DrM6GNQ0pqCd_yE_s_hTsS3JhachOr3yQ/exec';
 
 let ccPortfolio = JSON.parse(localStorage.getItem('ccPortfolio') || '[]');
 
@@ -3280,23 +3280,52 @@ async function ccSaveToSheet() {
 async function ccLoadFromSheet() {
   try {
     showToast('☁️ 클라우드에서 불러오는 중...');
-    const resp = await fetch(CC_GSHEET_URL);
+    const resp = await fetch(CC_GSHEET_URL, { mode: 'cors' });
     const json = await resp.json();
-    if (json.status === 'ok' && json.data && json.data.length > 0) {
-      ccPortfolio = json.data.map(s => ({
+    if (json.status !== 'ok') { showToast('불러오기 실패: ' + (json.msg || '오류'), 'var(--red)'); return; }
+
+    // 새 방식: json.portfolio (JSON 통째로 저장)
+    if (json.portfolio && Array.isArray(json.portfolio) && json.portfolio.length > 0) {
+      ccPortfolio = json.portfolio.map(s => ({
         ...s,
         id          : Number(s.id),
-        qty         : Number(s.qty),
-        avgPrice    : Number(s.avgPrice),
-        curPrice    : Number(s.curPrice),
-        divPerShare : Number(s.divPerShare),
-        annYield    : Number(s.annYield),
-        annDiv      : Number(s.annDiv),
+        qty         : Number(s.qty)         || 0,
+        avgPrice    : Number(s.avgPrice)    || 0,
+        curPrice    : Number(s.curPrice)    || 0,
+        divPerShare : Number(s.divPerShare) || 0,
+        annYield    : Number(s.annYield)    || 0,
+        annDiv      : Number(s.annDiv)      || 0,
+        divHistory  : Array.isArray(s.divHistory) ? s.divHistory.map(h => ({
+          ...h,
+          qty         : Number(h.qty)         || 0,
+          divPerShare : Number(h.divPerShare) || 0,
+          annYield    : Number(h.annYield)    || 0,
+          annDiv      : Number(h.annDiv)      || 0,
+        })) : [],
       }));
       ccSaveLocal();
       ccRender();
       ccRenderTimeline();
       showToast(`☁️ ${ccPortfolio.length}개 종목 불러오기 완료!`);
+    // 구 방식 호환: json.data (행 기반, divHistory 없음)
+    } else if (json.data && Array.isArray(json.data) && json.data.length > 0) {
+      const valid = json.data.filter(s => Number(s.id) > 0 && s.name);
+      if (valid.length === 0) { showToast('불러올 유효한 데이터가 없습니다.'); return; }
+      ccPortfolio = valid.map(s => ({
+        ...s,
+        id          : Number(s.id),
+        qty         : Number(s.qty)         || 0,
+        avgPrice    : Number(s.avgPrice)    || 0,
+        curPrice    : Number(s.curPrice)    || 0,
+        divPerShare : Number(s.divPerShare) || 0,
+        annYield    : Number(s.annYield)    || 0,
+        annDiv      : Number(s.annDiv)      || 0,
+        divHistory  : [],
+      }));
+      ccSaveLocal();
+      ccRender();
+      ccRenderTimeline();
+      showToast(`☁️ ${ccPortfolio.length}개 종목 불러오기 완료! (이력 없는 구 형식)`);
     } else {
       showToast('클라우드에 저장된 데이터가 없습니다.');
     }
