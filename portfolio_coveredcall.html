@@ -1671,6 +1671,8 @@ function switchTab(tab) {
   // event.target이 span(아이콘/라벨)일 수 있으므로 closest로 버튼 찾기
   const btn = event.target.closest('.tab-btn');
   if (btn) btn.classList.add('active');
+  // 커버드콜 탭 전환 시 렌더 (DOM이 보여진 후 실행)
+  if (tab === 'coveredcall') setTimeout(ccRender, 0);
 }
 
 /* ────────────────────────────── Toast ────────────────────────────── */
@@ -2577,7 +2579,7 @@ window.addEventListener('resize', resizeCharts);
 
 
 /* ═══════════════════ COVERED CALL STATE & CONSTANTS ═══════════════════ */
-const CC_GSHEET_URL = 'https://script.google.com/macros/s/AKfycbzUtubv1-3LSopq-7tnljg6idh86zmmGSBygjlmMgqZlZVPKQ-e-rM4GV8ZfEa5sSetuw/exec';
+const CC_GSHEET_URL = 'https://script.google.com/macros/s/YOUR_CC_SCRIPT_ID_HERE/exec';
 
 let ccPortfolio = JSON.parse(localStorage.getItem('ccPortfolio') || '[]');
 
@@ -2690,6 +2692,7 @@ function ccCalc(s) {
 /* ─── Render ─── */
 function ccRender() {
   const body = document.getElementById('cc-tableBody');
+  if (!body) return; // 탭이 숨겨져 있거나 아직 렌더되지 않은 경우
 
   let sumBuy = 0, sumEval = 0, sumDiv = 0, sumAnnDiv = 0;
 
@@ -2783,6 +2786,7 @@ function ccRender() {
 }
 
 function ccUpdateSummary(sumBuy, sumEval, sumDiv, sumAnnDiv, count) {
+  if (!document.getElementById('cc-sumBuy')) return; // 탭이 숨겨진 경우
   const pnl    = sumEval - sumBuy;
   const pnlPct = sumBuy > 0 ? (pnl / sumBuy) * 100 : null;
   const sign   = pnl >= 0 ? '+' : '';
@@ -2892,7 +2896,12 @@ function ccImportJSON(e) {
 
 // Initial render
 renderPortfolio();
-ccRender();
+// CC render: 탭 전환 시 또는 직접 호출 시에도 안전하게 동작
+document.addEventListener('DOMContentLoaded', function() {
+  ccRender();
+});
+// DOMContentLoaded가 이미 지난 경우를 위한 즉시 실행
+if (document.readyState !== 'loading') ccRender();
 </script>
 </body>
 </html>
