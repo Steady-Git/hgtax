@@ -2619,6 +2619,12 @@ function ccAddStock() {
   ccRender();
   showToast(`${name} 추가 완료!`);
 
+  // 추가된 테이블로 자동 스크롤
+  setTimeout(() => {
+    const tableEl = document.getElementById('cc-tableBody');
+    if (tableEl) tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+
   // reset form
   ['cc-name','cc-qty','cc-avgprice','cc-curprice','cc-divpershare',
    'cc-exdate','cc-paydate','cc-annyield','cc-anndiv'].forEach(id => {
@@ -2707,7 +2713,9 @@ function ccRender() {
     return;
   }
 
-  const rows = ccPortfolio.map(s => {
+  let rows;
+  try {
+  rows = ccPortfolio.map(s => {
     const c = ccCalc(s);
     sumBuy    += c.buyAmt;
     sumEval   += c.evalAmt;
@@ -2731,10 +2739,10 @@ function ccRender() {
     }
 
     return `<tr>
-      <td><div class="td-name">${s.name}</div></td>
-      <td style="text-align:right">${s.qty.toLocaleString()}</td>
-      <td style="text-align:right">${s.avgPrice ? s.avgPrice.toLocaleString()+'원' : '—'}</td>
-      <td style="text-align:right">${s.curPrice ? s.curPrice.toLocaleString()+'원' : '—'}</td>
+      <td><div class="td-name">${s.name || '—'}</div></td>
+      <td style="text-align:right">${Number(s.qty).toLocaleString()}</td>
+      <td style="text-align:right">${s.avgPrice ? Number(s.avgPrice).toLocaleString()+'원' : '—'}</td>
+      <td style="text-align:right">${s.curPrice ? Number(s.curPrice).toLocaleString()+'원' : '—'}</td>
       <td style="text-align:right">${ccFmt(c.buyAmt)}</td>
       <td style="text-align:right">${ccFmt(c.evalAmt)}</td>
       <td style="text-align:right" class="${pnlCls}">${isFinite(c.pnl) ? pnlSign+c.pnl.toLocaleString()+'원' : '—'}</td>
@@ -2754,6 +2762,11 @@ function ccRender() {
       </td>
     </tr>`;
   }).join('');
+  } catch(renderErr) {
+    console.error('ccRender 오류:', renderErr);
+    body.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">렌더링 오류</div><div class="empty-sub">${renderErr.message}</div></div>`;
+    return;
+  }
 
   body.innerHTML = `
     <div class="table-wrap">
@@ -2818,6 +2831,8 @@ async function ccSaveToSheet() {
   try {
     const resp = await fetch(CC_GSHEET_URL, {
       method: 'POST',
+      mode: 'cors',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'save', data: ccPortfolio }),
     });
     const json = await resp.json();
@@ -2836,19 +2851,25 @@ async function ccSaveToSheet() {
 async function ccLoadFromSheet() {
   try {
     showToast('☁️ 클라우드에서 불러오는 중...');
-    const resp = await fetch(CC_GSHEET_URL);
+    const resp = await fetch(CC_GSHEET_URL, { mode: 'cors' });
     const json = await resp.json();
     if (json.status === 'ok' && json.data && json.data.length > 0) {
-      ccPortfolio = json.data.map(s => ({
-        ...s,
-        id          : Number(s.id),
-        qty         : Number(s.qty),
-        avgPrice    : Number(s.avgPrice),
-        curPrice    : Number(s.curPrice),
-        divPerShare : Number(s.divPerShare),
-        annYield    : Number(s.annYield),
-        annDiv      : Number(s.annDiv),
-      }));
+      ccPortfolio = json.data
+        .filter(s => s.id && s.name && typeof s.name === 'string' && isNaN(Number(s.name)) === false ? false : s.name)
+        .filter(s => s.id && Number(s.id) > 0 && s.name)
+        .map(s => ({
+          ...s,
+          id          : Number(s.id),
+          name        : String(s.name || ''),
+          qty         : Number(s.qty)         || 0,
+          avgPrice    : Number(s.avgPrice)    || 0,
+          curPrice    : Number(s.curPrice)    || 0,
+          divPerShare : Number(s.divPerShare) || 0,
+          exDate      : String(s.exDate  || ''),
+          payDate     : String(s.payDate || ''),
+          annYield    : Number(s.annYield)    || 0,
+          annDiv      : Number(s.annDiv)      || 0,
+        }));
       ccSaveLocal();
       ccRender();
       showToast(`☁️ ${ccPortfolio.length}개 종목 불러오기 완료!`);
