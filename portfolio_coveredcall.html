@@ -1065,12 +1065,13 @@
     .modal-overlay {
       align-items: flex-end;
     }
+    .modal { -webkit-overflow-scrolling: touch; }
     #ccHistModal .modal {
       max-height: 88vh;
     }
     /* 이력 모달 그리드 모바일 */
     #ccHistModal .modal > div[style*="grid"] {
-      grid-template-columns: 1fr !important;
+      grid-template-columns: 1fr 1fr !important;
     }
     /* 타임라인 요약 3열 → 1열 */
     #cc-tl-summary {
@@ -1519,7 +1520,7 @@
 
   <!-- ── 배당 타임라인 카드 ── -->
   <div class="card" id="cc-timeline-card">
-    <div class="card-title" style="justify-content:space-between">
+    <div class="card-title" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
       <span>월간 배당 타임라인</span>
       <div style="display:flex;align-items:center;gap:8px">
         <button class="btn-ghost" onclick="ccTimelinePrev()" style="height:30px;width:30px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%">◀</button>
@@ -1530,7 +1531,7 @@
     <!-- 요약 -->
     <div id="cc-tl-summary" style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border)"></div>
     <!-- 달력 -->
-    <div id="cc-tl-calendar" style="padding:16px 20px 0"></div>
+    <div id="cc-tl-calendar" style="padding:16px 20px 0;overflow-x:auto"></div>
     <!-- 목록 -->
     <div id="cc-tl-list" style="padding:0 20px 16px;margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
     <!-- 빈 상태 -->
@@ -2685,7 +2686,7 @@ window.addEventListener('resize', resizeCharts);
 
 
 /* ═══════════════════ COVERED CALL STATE & CONSTANTS ═══════════════════ */
-const CC_GSHEET_URL = 'https://script.google.com/macros/s/AKfycbyj-IhIMUzGZc7eak0aMPx6doEeaLS7sxCRJxQ6E9teXNoru5Je0zudgArCh-Lndb5x/exec';
+const CC_GSHEET_URL = 'https://script.google.com/macros/s/AKfycbzzmWTOWPJZCQw4Vp-cMEebd8IM7_zvvV9DrM6GNQ0pqCd_yE_s_hTsS3JhachOr3yQ/exec';
 
 let ccPortfolio = JSON.parse(localStorage.getItem('ccPortfolio') || '[]');
 
@@ -2733,7 +2734,9 @@ function ccAddStock() {
 
   ccPortfolio.push(item);
   ccSaveLocal();
+  ccAutoSyncSheet();
   ccRender();
+  ccRenderTimeline();
   showToast(`${name} 추가 완료!`);
 
   // reset form
@@ -2750,7 +2753,9 @@ function ccRemove(id) {
   if (!s || !confirm(`"${s.name}"을(를) 삭제하시겠습니까?`)) return;
   ccPortfolio = ccPortfolio.filter(x => x.id !== id);
   ccSaveLocal();
+  ccAutoSyncSheet();
   ccRender();
+  ccRenderTimeline();
   showToast(`${s.name} 삭제됨`, 'var(--red)');
 }
 
@@ -2982,7 +2987,7 @@ function ccRenderTimeline() {
     if (!entry) {
       const pd = ccTlParseDate(s.payDate);
       if (pd && pd.getFullYear()===y && pd.getMonth()===mo) {
-        entry = { ym, divPerShare: s.divPerShare, exDate: s.exDate, payDate: s.payDate, annYield: s.annYield, annDiv: s.annDiv };
+        entry = { ym, qty: s.qty, divPerShare: s.divPerShare, exDate: s.exDate, payDate: s.payDate, annYield: s.annYield, annDiv: s.annDiv };
       }
     }
     if (entry && entry.payDate) {
@@ -3020,7 +3025,7 @@ function ccRenderTimeline() {
   items.forEach(it => { const d=it.pd.getDate(); if(!payMap[d]) payMap[d]=[]; payMap[d].push(it); });
   const today = new Date();
   const DOW = ['일','월','화','수','목','금','토'];
-  let cal = `<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:4px">
+  let cal = `<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:4px;min-width:280px">
     <div style="display:grid;grid-template-columns:repeat(7,1fr);background:var(--surface2)">`;
   DOW.forEach((d,i) => {
     const c = i===0?'var(--red)':i===6?'var(--accent2)':'var(--text-muted)';
@@ -3199,7 +3204,7 @@ function ccHistRenderTable(s) {
     <div><span style="font-size:11px;color:var(--text-muted)">기록 수</span><br>
     <span style="font-size:15px;font-weight:700">${hist.length}건</span></div>
   </div>
-  <div style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">
+  <div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table style="min-width:520px;font-size:12px;border-collapse:collapse">
     <thead><tr style="background:var(--surface2)">
       <th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap">연월</th>
       <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap">보유수량</th>
@@ -3324,7 +3329,9 @@ function ccImportJSON(e) {
       if (!confirm(`총 ${data.length}개 종목을 불러옵니다.\n기존 데이터는 덮어씌워집니다. 계속할까요?`)) return;
       ccPortfolio = data;
       ccSaveLocal();
+      ccAutoSyncSheet();
       ccRender();
+      ccRenderTimeline();
       showToast(`📥 ${data.length}개 종목 불러오기 완료!`);
     } catch(err) {
       showToast('파일 오류: ' + err.message, 'var(--red)');
