@@ -1431,6 +1431,18 @@
 
   <!-- Summary -->
   <div class="card">
+    <!-- 월 네비게이터 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn-ghost" onclick="ccSumPrev()" style="height:28px;width:28px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:12px">◀</button>
+        <span id="cc-sum-label" style="font-size:13px;font-weight:700;letter-spacing:.5px;min-width:80px;text-align:center;color:var(--text)"></span>
+        <button class="btn-ghost" onclick="ccSumNext()" style="height:28px;width:28px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:12px">▶</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span id="cc-sum-mode-badge" style="font-size:10px;padding:3px 8px;border-radius:20px;background:var(--surface2);color:var(--text-muted);border:1px solid var(--border)">전체 현황</span>
+        <button class="btn-ghost" onclick="ccSumGoToday()" style="height:24px;padding:0 8px;font-size:11px;border-radius:12px">오늘</button>
+      </div>
+    </div>
     <div class="summary-grid" style="grid-template-columns:repeat(2,1fr)">
       <div class="summary-item">
         <div class="summary-label">총 매입금액</div>
@@ -1448,21 +1460,21 @@
         <div class="summary-sub" id="cc-sumPnlPct">—</div>
       </div>
       <div class="summary-item">
-        <div class="summary-label">총 배당금(월)</div>
+        <div class="summary-label" id="cc-sumDivLabel">총 배당금(월)</div>
         <div class="summary-val" style="color:var(--accent)" id="cc-sumDiv">—</div>
         <div class="summary-sub">원</div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(2,1fr)">
       <div class="summary-item" style="border-top:1px solid var(--border)">
-        <div class="summary-label">총 배당금(연) · 공시기준</div>
+        <div class="summary-label" id="cc-sumAnnDivLabel">총 배당금(연) · 공시기준</div>
         <div class="summary-val" style="color:var(--accent2)" id="cc-sumAnnDiv">—</div>
         <div class="summary-sub">원</div>
       </div>
       <div class="summary-item" style="border-top:1px solid var(--border);border-right:none">
-        <div class="summary-label">보유 종목</div>
+        <div class="summary-label" id="cc-sumCountLabel">보유 종목</div>
         <div class="summary-val" id="cc-sumCount">0</div>
-        <div class="summary-sub">종목</div>
+        <div class="summary-sub" id="cc-sumCountSub">종목</div>
       </div>
     </div>
   </div>
@@ -2686,7 +2698,7 @@ window.addEventListener('resize', resizeCharts);
 
 
 /* ═══════════════════ COVERED CALL STATE & CONSTANTS ═══════════════════ */
-const CC_GSHEET_URL = 'https://script.google.com/macros/s/AKfycbzAZRTqrJ3nxixSDMI7_FQXD2JlWpjY9V0gt8WffMBeUnB8LStGqH2N7ES-fi_hd6Dw/exec';
+const CC_GSHEET_URL = 'https://script.google.com/macros/s/AKfycbzzmWTOWPJZCQw4Vp-cMEebd8IM7_zvvV9DrM6GNQ0pqCd_yE_s_hTsS3JhachOr3yQ/exec';
 
 let ccPortfolio = JSON.parse(localStorage.getItem('ccPortfolio') || '[]');
 
@@ -2919,15 +2931,123 @@ function ccRender() {
   ccUpdateSummary(sumBuy, sumEval, sumDiv, sumAnnDiv, ccPortfolio.length);
 }
 
-function ccUpdateSummary(sumBuy, sumEval, sumDiv, sumAnnDiv, count) {
-  if (!document.getElementById('cc-sumBuy')) return; // 탭이 숨겨진 경우
+/* ══════════════════ 요약 카드 월 네비게이터 ══════════════════ */
+let ccSumDate = new Date();
+ccSumDate.setDate(1);
+let ccSumIsMonthly = false; // false=전체현황, true=월별배당
+
+function ccSumPrev() {
+  ccSumDate.setMonth(ccSumDate.getMonth() - 1);
+  ccSumIsMonthly = true;
+  ccUpdateSummaryByMonth();
+}
+function ccSumNext() {
+  ccSumDate.setMonth(ccSumDate.getMonth() + 1);
+  ccSumIsMonthly = true;
+  ccUpdateSummaryByMonth();
+}
+function ccSumGoToday() {
+  ccSumDate = new Date(); ccSumDate.setDate(1);
+  ccSumIsMonthly = false;
+  ccRender(); // 전체 현황으로 복귀
+}
+
+// 월별 배당 모드: 해당 월 payDate 기준 배당금/종목수 계산
+function ccUpdateSummaryByMonth() {
+  if (!document.getElementById('cc-sumBuy')) return;
+  const y = ccSumDate.getFullYear(), mo = ccSumDate.getMonth();
+  const ym = `${y}-${String(mo+1).padStart(2,'0')}`;
+
+  // 해당 월에 배당 지급되는 항목 수집
+  let monthDiv = 0, monthAnnDiv = 0, monthCount = 0;
+  ccPortfolio.forEach(s => {
+    let entry = null;
+    if (s.divHistory && s.divHistory.length > 0) {
+      entry = s.divHistory.find(h => h.ym === ym);
+    }
+    if (!entry) {
+      const pd = ccTlParseDate(s.payDate);
+      if (pd && pd.getFullYear()===y && pd.getMonth()===mo) {
+        entry = { qty: s.qty, divPerShare: s.divPerShare, annDiv: s.annDiv };
+      }
+    }
+    if (entry) {
+      const q = Number(entry.qty != null ? entry.qty : s.qty) || 0;
+      monthDiv    += q * (Number(entry.divPerShare) || 0);
+      monthAnnDiv += q * (Number(entry.annDiv)      || 0);
+      monthCount++;
+    }
+  });
+
+  // 평가금액/손익은 전체 현황 그대로 유지 (현재가 기준)
+  let sumBuy = 0, sumEval = 0;
+  ccPortfolio.forEach(s => {
+    sumBuy  += (Number(s.qty)||0) * (Number(s.avgPrice)||0);
+    sumEval += (Number(s.qty)||0) * (Number(s.curPrice)||0);
+  });
   const pnl    = sumEval - sumBuy;
   const pnlPct = sumBuy > 0 ? (pnl / sumBuy) * 100 : null;
   const sign   = pnl >= 0 ? '+' : '';
 
-  document.getElementById('cc-sumBuy').textContent    = sumBuy  ? sumBuy.toLocaleString()  : '—';
-  document.getElementById('cc-sumEval').textContent   = sumEval ? sumEval.toLocaleString() : '—';
-  document.getElementById('cc-sumDiv').textContent    = sumDiv  ? sumDiv.toLocaleString()  : '—';
+  // 레이블
+  document.getElementById('cc-sum-label').textContent      = `${y}년 ${mo+1}월`;
+  document.getElementById('cc-sum-mode-badge').textContent  = `${mo+1}월 배당`;
+  document.getElementById('cc-sum-mode-badge').style.background = 'rgba(0,212,170,0.12)';
+  document.getElementById('cc-sum-mode-badge').style.color      = 'var(--accent)';
+  document.getElementById('cc-sum-mode-badge').style.borderColor= 'var(--accent)';
+
+  document.getElementById('cc-sumDivLabel').textContent     = `총 배당금 · ${mo+1}월`;
+  document.getElementById('cc-sumAnnDivLabel').textContent  = `총 배당금(연) · ${mo+1}월 공시`;
+  document.getElementById('cc-sumCountLabel').textContent   = `${mo+1}월 배당 종목`;
+  document.getElementById('cc-sumCountSub').textContent     = '종목';
+
+  document.getElementById('cc-sumBuy').textContent     = sumBuy  ? sumBuy.toLocaleString()  : '—';
+  document.getElementById('cc-sumEval').textContent    = sumEval ? sumEval.toLocaleString() : '—';
+  document.getElementById('cc-sumDiv').textContent     = monthDiv    ? Math.round(monthDiv).toLocaleString()    : '—';
+  document.getElementById('cc-sumAnnDiv').textContent  = monthAnnDiv ? Math.round(monthAnnDiv).toLocaleString() : '—';
+  document.getElementById('cc-sumCount').textContent   = monthCount;
+
+  const pnlEl = document.getElementById('cc-sumPnl');
+  const pctEl = document.getElementById('cc-sumPnlPct');
+  if (sumBuy > 0) {
+    pnlEl.textContent = sign + pnl.toLocaleString();
+    pnlEl.className   = 'summary-val ' + (pnl >= 0 ? 'up' : 'down');
+    pctEl.textContent = pnlPct !== null ? sign + pnlPct.toFixed(2) + '%' : '—';
+    pctEl.className   = 'summary-sub ' + (pnl >= 0 ? 'up' : 'down');
+  } else {
+    pnlEl.textContent = '—'; pnlEl.className = 'summary-val';
+    pctEl.textContent = '—'; pctEl.className = 'summary-sub';
+  }
+
+  // 아래 타임라인도 동기화
+  ccTlDate = new Date(ccSumDate);
+  ccRenderTimeline();
+}
+
+function ccUpdateSummary(sumBuy, sumEval, sumDiv, sumAnnDiv, count) {
+  if (!document.getElementById('cc-sumBuy')) return;
+  if (ccSumIsMonthly) { ccUpdateSummaryByMonth(); return; } // 월별 모드 유지
+
+  const pnl    = sumEval - sumBuy;
+  const pnlPct = sumBuy > 0 ? (pnl / sumBuy) * 100 : null;
+  const sign   = pnl >= 0 ? '+' : '';
+
+  // 레이블 전체 현황으로 복원
+  const now = new Date();
+  document.getElementById('cc-sum-label').textContent      = `${now.getFullYear()}년 ${now.getMonth()+1}월`;
+  document.getElementById('cc-sum-mode-badge').textContent  = '전체 현황';
+  document.getElementById('cc-sum-mode-badge').style.background  = 'var(--surface2)';
+  document.getElementById('cc-sum-mode-badge').style.color       = 'var(--text-muted)';
+  document.getElementById('cc-sum-mode-badge').style.borderColor = 'var(--border)';
+
+  document.getElementById('cc-sumDivLabel').textContent    = '총 배당금(월)';
+  document.getElementById('cc-sumAnnDivLabel').textContent = '총 배당금(연) · 공시기준';
+  document.getElementById('cc-sumCountLabel').textContent  = '보유 종목';
+  document.getElementById('cc-sumCountSub').textContent    = '종목';
+
+  document.getElementById('cc-sumBuy').textContent    = sumBuy    ? sumBuy.toLocaleString()    : '—';
+  document.getElementById('cc-sumEval').textContent   = sumEval   ? sumEval.toLocaleString()   : '—';
+  document.getElementById('cc-sumDiv').textContent    = sumDiv    ? sumDiv.toLocaleString()    : '—';
   document.getElementById('cc-sumAnnDiv').textContent = sumAnnDiv ? sumAnnDiv.toLocaleString() : '—';
   document.getElementById('cc-sumCount').textContent  = count;
 
@@ -2955,8 +3075,18 @@ const TL_PALETTE = [
 let ccTlDate = new Date();
 ccTlDate.setDate(1);
 
-function ccTimelinePrev() { ccTlDate.setMonth(ccTlDate.getMonth()-1); ccRenderTimeline(); }
-function ccTimelineNext() { ccTlDate.setMonth(ccTlDate.getMonth()+1); ccRenderTimeline(); }
+function ccTimelinePrev() {
+  ccTlDate.setMonth(ccTlDate.getMonth()-1);
+  ccSumDate = new Date(ccTlDate); ccSumIsMonthly = true;
+  ccRenderTimeline();
+  ccUpdateSummaryByMonth();
+}
+function ccTimelineNext() {
+  ccTlDate.setMonth(ccTlDate.getMonth()+1);
+  ccSumDate = new Date(ccTlDate); ccSumIsMonthly = true;
+  ccRenderTimeline();
+  ccUpdateSummaryByMonth();
+}
 
 function ccTlParseDate(str) {
   if (!str) return null;
@@ -3378,6 +3508,13 @@ document.addEventListener('DOMContentLoaded', function() {
   ccRenderTimeline();
 });
 if (document.readyState !== 'loading') { ccRender(); ccRenderTimeline(); }
+
+// 요약 카드 초기 레이블 세팅
+(function() {
+  const now = new Date();
+  const lbl = document.getElementById('cc-sum-label');
+  if (lbl) lbl.textContent = `${now.getFullYear()}년 ${now.getMonth()+1}월`;
+})();
 </script>
 </body>
 </html>
