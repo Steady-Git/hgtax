@@ -1473,6 +1473,30 @@
     </div>
   </div>
 
+  <!-- ── 배당 타임라인 카드 ── -->
+  <div class="card" id="cc-timeline-card">
+    <div class="card-title" style="justify-content:space-between">
+      <span>월간 배당 타임라인</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn-ghost" onclick="ccTimelinePrev()" style="height:30px;width:30px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%">◀</button>
+        <span id="cc-tl-label" style="font-size:13px;font-weight:700;letter-spacing:.5px;min-width:80px;text-align:center"></span>
+        <button class="btn-ghost" onclick="ccTimelineNext()" style="height:30px;width:30px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%">▶</button>
+      </div>
+    </div>
+    <!-- 요약 -->
+    <div id="cc-tl-summary" style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border)"></div>
+    <!-- 달력 -->
+    <div id="cc-tl-calendar" style="padding:16px 20px 0"></div>
+    <!-- 목록 -->
+    <div id="cc-tl-list" style="padding:0 20px 16px;margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
+    <!-- 빈 상태 -->
+    <div id="cc-tl-empty" style="display:none;text-align:center;padding:40px 24px;color:var(--text-muted)">
+      <div style="font-size:32px;margin-bottom:12px;opacity:.4">📅</div>
+      <div style="font-size:14px">이 달에 배당지급일이 등록된 종목이 없습니다</div>
+      <div style="font-size:12px;margin-top:6px;opacity:.7">배당 이력에서 해당 월 데이터를 추가해 보세요</div>
+    </div>
+  </div>
+
   <!-- Table card -->
   <div class="card">
     <div class="card-title" style="flex-direction:column;align-items:flex-start;gap:10px;padding:16px 20px">
@@ -1538,6 +1562,40 @@
     <div class="modal-btns">
       <button class="btn-ghost" onclick="ccCloseModal()">취소</button>
       <button class="btn" onclick="ccSaveEdit()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- CC Dividend History Modal -->
+<div class="modal-overlay" id="ccHistModal">
+  <div class="modal" style="max-width:640px;max-height:80vh;overflow-y:auto">
+    <h2 id="ccHistModalTitle">배당 이력</h2>
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="field" style="flex:1;min-width:120px">
+        <label>배당지급일</label>
+        <input type="date" id="cc-hist-paydate" style="color-scheme:dark" />
+      </div>
+      <div class="field" style="flex:1;min-width:100px">
+        <label>배당락일</label>
+        <input type="date" id="cc-hist-exdate" style="color-scheme:dark" />
+      </div>
+      <div class="field" style="flex:1;min-width:100px">
+        <label>1주당 배당금(월)</label>
+        <input type="number" id="cc-hist-div" placeholder="0" min="0" step="0.0001" />
+      </div>
+      <div class="field" style="flex:1;min-width:100px">
+        <label>공시 배당수익률(연) %</label>
+        <input type="number" id="cc-hist-annyield" placeholder="0.00" min="0" step="0.01" />
+      </div>
+      <div class="field" style="flex:1;min-width:100px">
+        <label>공시 1주당 배당금(연)</label>
+        <input type="number" id="cc-hist-anndiv" placeholder="0" min="0" step="0.0001" />
+      </div>
+    </div>
+    <button class="btn" onclick="ccHistAdd()" style="width:100%;margin-bottom:20px">+ 이번 달 배당 이력 추가</button>
+    <div id="cc-hist-table"></div>
+    <div class="modal-btns" style="margin-top:16px">
+      <button class="btn-ghost" onclick="ccHistClose()">닫기</button>
     </div>
   </div>
 </div>
@@ -1672,7 +1730,7 @@ function switchTab(tab) {
   const btn = event.target.closest('.tab-btn');
   if (btn) btn.classList.add('active');
   // 커버드콜 탭 전환 시 렌더 (DOM이 보여진 후 실행)
-  if (tab === 'coveredcall') setTimeout(ccRender, 0);
+  if (tab === 'coveredcall') setTimeout(() => { ccRender(); ccRenderTimeline(); }, 0);
 }
 
 /* ────────────────────────────── Toast ────────────────────────────── */
@@ -2579,7 +2637,7 @@ window.addEventListener('resize', resizeCharts);
 
 
 /* ═══════════════════ COVERED CALL STATE & CONSTANTS ═══════════════════ */
-const CC_GSHEET_URL = 'https://script.google.com/macros/s/AKfycbyj-IhIMUzGZc7eak0aMPx6doEeaLS7sxCRJxQ6E9teXNoru5Je0zudgArCh-Lndb5x/exec';
+const CC_GSHEET_URL = 'https://script.google.com/macros/s/AKfycbzzmWTOWPJZCQw4Vp-cMEebd8IM7_zvvV9DrM6GNQ0pqCd_yE_s_hTsS3JhachOr3yQ/exec';
 
 let ccPortfolio = JSON.parse(localStorage.getItem('ccPortfolio') || '[]');
 
@@ -2601,29 +2659,34 @@ function ccAddStock() {
   const qty = parseFloat(document.getElementById('cc-qty').value) || 0;
   if (qty <= 0) { showToast('보유수량을 입력해주세요.', 'var(--red)'); return; }
 
+  const _payDate = ccStr('cc-paydate');
+  const _divPerShare = ccNum('cc-divpershare');
+  const _exDate = ccStr('cc-exdate');
+  const _annYield = ccNum('cc-annyield');
+  const _annDiv = ccNum('cc-anndiv');
+  const _ym = _payDate ? _payDate.slice(0,7) : new Date().toISOString().slice(0,7);
+
   const item = {
     id: Date.now(),
     name,
     qty,
     avgPrice    : ccNum('cc-avgprice'),
     curPrice    : ccNum('cc-curprice'),
-    divPerShare : ccNum('cc-divpershare'),
-    exDate      : ccStr('cc-exdate'),
-    payDate     : ccStr('cc-paydate'),
-    annYield    : ccNum('cc-annyield'),
-    annDiv      : ccNum('cc-anndiv'),
+    divPerShare : _divPerShare,
+    exDate      : _exDate,
+    payDate     : _payDate,
+    annYield    : _annYield,
+    annDiv      : _annDiv,
+    divHistory  : (_divPerShare > 0 || _payDate) ? [{
+      ym: _ym, divPerShare: _divPerShare, exDate: _exDate,
+      payDate: _payDate, annYield: _annYield, annDiv: _annDiv
+    }] : [],
   };
 
   ccPortfolio.push(item);
   ccSaveLocal();
   ccRender();
   showToast(`${name} 추가 완료!`);
-
-  // 추가된 테이블로 자동 스크롤
-  setTimeout(() => {
-    const tableEl = document.getElementById('cc-tableBody');
-    if (tableEl) tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 100);
 
   // reset form
   ['cc-name','cc-qty','cc-avgprice','cc-curprice','cc-divpershare',
@@ -2677,6 +2740,15 @@ function ccSaveEdit() {
   s.payDate     = document.getElementById('cc-editPaydate').value;
   s.annYield    = parseFloat(document.getElementById('cc-editAnnyield').value)    || 0;
   s.annDiv      = parseFloat(document.getElementById('cc-editAnndiv').value)      || 0;
+  if (!s.divHistory) s.divHistory = [];
+  if (s.payDate || s.divPerShare > 0) {
+    const ym = s.payDate ? s.payDate.slice(0,7) : new Date().toISOString().slice(0,7);
+    const existing = s.divHistory.findIndex(h => h.ym === ym);
+    const entry = { ym, divPerShare: s.divPerShare, exDate: s.exDate, payDate: s.payDate, annYield: s.annYield, annDiv: s.annDiv };
+    if (existing >= 0) s.divHistory[existing] = entry;
+    else s.divHistory.push(entry);
+    s.divHistory.sort((a,b) => b.ym.localeCompare(a.ym));
+  }
   ccSaveLocal();
   ccRender();
   ccCloseModal();
@@ -2713,9 +2785,7 @@ function ccRender() {
     return;
   }
 
-  let rows;
-  try {
-  rows = ccPortfolio.map(s => {
+  const rows = ccPortfolio.map(s => {
     const c = ccCalc(s);
     sumBuy    += c.buyAmt;
     sumEval   += c.evalAmt;
@@ -2739,10 +2809,10 @@ function ccRender() {
     }
 
     return `<tr>
-      <td><div class="td-name">${s.name || '—'}</div></td>
-      <td style="text-align:right">${Number(s.qty).toLocaleString()}</td>
-      <td style="text-align:right">${s.avgPrice ? Number(s.avgPrice).toLocaleString()+'원' : '—'}</td>
-      <td style="text-align:right">${s.curPrice ? Number(s.curPrice).toLocaleString()+'원' : '—'}</td>
+      <td><div class="td-name">${s.name}</div></td>
+      <td style="text-align:right">${s.qty.toLocaleString()}</td>
+      <td style="text-align:right">${s.avgPrice ? s.avgPrice.toLocaleString()+'원' : '—'}</td>
+      <td style="text-align:right">${s.curPrice ? s.curPrice.toLocaleString()+'원' : '—'}</td>
       <td style="text-align:right">${ccFmt(c.buyAmt)}</td>
       <td style="text-align:right">${ccFmt(c.evalAmt)}</td>
       <td style="text-align:right" class="${pnlCls}">${isFinite(c.pnl) ? pnlSign+c.pnl.toLocaleString()+'원' : '—'}</td>
@@ -2757,16 +2827,12 @@ function ccRender() {
       <td>
         <div style="display:flex;gap:6px">
           <button class="btn-blue" onclick="ccOpenEdit(${s.id})">수정</button>
+          <button class="btn-ghost" onclick="ccHistOpen(${s.id})" style="padding:6px 10px;font-size:11px;height:auto;border-radius:8px">이력</button>
           <button class="btn-red"  onclick="ccRemove(${s.id})">삭제</button>
         </div>
       </td>
     </tr>`;
   }).join('');
-  } catch(renderErr) {
-    console.error('ccRender 오류:', renderErr);
-    body.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">렌더링 오류</div><div class="empty-sub">${renderErr.message}</div></div>`;
-    return;
-  }
 
   body.innerHTML = `
     <div class="table-wrap">
@@ -2823,6 +2889,279 @@ function ccUpdateSummary(sumBuy, sumEval, sumDiv, sumAnnDiv, count) {
   }
 }
 
+/* ══════════════════════ TIMELINE ══════════════════════ */
+const TL_PALETTE = [
+  {bg:'#1f3a5a',bar:'#58a6ff'}, {bg:'#1a3a22',bar:'#3fb950'},
+  {bg:'#2d2208',bar:'#d29922'}, {bg:'#2a1f4a',bar:'#bc8cff'},
+  {bg:'#3a1a1a',bar:'#f85149'}, {bg:'#1a2d38',bar:'#00d4aa'},
+  {bg:'#2a2015',bar:'#e3b341'}, {bg:'#1d2030',bar:'#79c0ff'},
+];
+
+let ccTlDate = new Date();
+ccTlDate.setDate(1);
+
+function ccTimelinePrev() { ccTlDate.setMonth(ccTlDate.getMonth()-1); ccRenderTimeline(); }
+function ccTimelineNext() { ccTlDate.setMonth(ccTlDate.getMonth()+1); ccRenderTimeline(); }
+
+function ccTlParseDate(str) {
+  if (!str) return null;
+  const m = String(str).match(/^(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/);
+  return m ? new Date(+m[1], +m[2]-1, +m[3]) : null;
+}
+
+function ccRenderTimeline() {
+  const lbl = document.getElementById('cc-tl-label');
+  const sumEl = document.getElementById('cc-tl-summary');
+  const calEl = document.getElementById('cc-tl-calendar');
+  const listEl = document.getElementById('cc-tl-list');
+  const emptyEl = document.getElementById('cc-tl-empty');
+  if (!lbl) return;
+
+  const y = ccTlDate.getFullYear(), mo = ccTlDate.getMonth();
+  lbl.textContent = `${y}년 ${mo+1}월`;
+
+  // 각 종목에서 해당 월의 이력 찾기
+  const items = [];
+  ccPortfolio.forEach((s, idx) => {
+    const ym = `${y}-${String(mo+1).padStart(2,'0')}`;
+    let entry = null;
+    if (s.divHistory && s.divHistory.length > 0) {
+      entry = s.divHistory.find(h => h.ym === ym);
+    }
+    // 이력이 없으면 현재 값에서 payDate 월로 매칭
+    if (!entry) {
+      const pd = ccTlParseDate(s.payDate);
+      if (pd && pd.getFullYear()===y && pd.getMonth()===mo) {
+        entry = { ym, divPerShare: s.divPerShare, exDate: s.exDate, payDate: s.payDate, annYield: s.annYield, annDiv: s.annDiv };
+      }
+    }
+    if (entry && entry.payDate) {
+      const pd = ccTlParseDate(entry.payDate);
+      if (pd) {
+        items.push({ s, entry, pd, idx, totalDiv: (Number(s.qty)||0)*(Number(entry.divPerShare)||0) });
+      }
+    }
+  });
+  items.sort((a,b) => a.pd - b.pd);
+
+  const totalDiv = items.reduce((a,x) => a+x.totalDiv, 0);
+  const totalAnnDiv = items.reduce((a,x) => a+(Number(x.s.qty)||0)*(Number(x.entry.annDiv)||0), 0);
+
+  if (items.length > 0) {
+    sumEl.innerHTML = [
+      ['이달 배당 종목', items.length+'개', ''],
+      ['이달 총 배당금', Math.round(totalDiv).toLocaleString()+'원', 'color:var(--accent)'],
+      ['연간 배당금(공시)', totalAnnDiv>0?Math.round(totalAnnDiv).toLocaleString()+'원':'—', 'color:var(--accent2)'],
+    ].map(([label,val,style],i) => `
+      <div style="padding:16px 20px;${i<2?'border-right:1px solid var(--border)':''}">
+        <div class="summary-label">${label}</div>
+        <div class="summary-val" style="font-size:18px;${style}">${val}</div>
+      </div>`).join('');
+    sumEl.style.display = 'grid';
+    sumEl.style.gridTemplateColumns = 'repeat(3,1fr)';
+  } else {
+    sumEl.innerHTML = ''; sumEl.style.display = 'none';
+  }
+
+  // 달력
+  const daysInMonth = new Date(y, mo+1, 0).getDate();
+  const firstDow = new Date(y, mo, 1).getDay();
+  const payMap = {};
+  items.forEach(it => { const d=it.pd.getDate(); if(!payMap[d]) payMap[d]=[]; payMap[d].push(it); });
+  const today = new Date();
+  const DOW = ['일','월','화','수','목','금','토'];
+  let cal = `<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:4px">
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);background:var(--surface2)">`;
+  DOW.forEach((d,i) => {
+    const c = i===0?'var(--red)':i===6?'var(--accent2)':'var(--text-muted)';
+    cal += `<div style="text-align:center;padding:7px 0;font-size:11px;font-weight:700;color:${c}">${d}</div>`;
+  });
+  cal += `</div><div style="display:grid;grid-template-columns:repeat(7,1fr)">`;
+  for(let i=0;i<firstDow;i++) cal += `<div style="min-height:50px;background:var(--surface2);border-right:1px solid var(--border);border-bottom:1px solid var(--border)"></div>`;
+  for(let d=1;d<=daysInMonth;d++) {
+    const dow=(firstDow+d-1)%7;
+    const isToday=today.getFullYear()===y&&today.getMonth()===mo&&today.getDate()===d;
+    const hits=payMap[d];
+    const noR=dow===6||(firstDow+d-1)===firstDow+daysInMonth-1;
+    const noB=d>daysInMonth-7;
+    const dc=dow===0?'var(--red)':dow===6?'var(--accent2)':'var(--text)';
+    const bg=isToday?'rgba(0,212,170,0.08)':hits?'rgba(0,212,170,0.05)':'transparent';
+    cal += `<div style="min-height:50px;padding:5px;background:${bg};border-right:${noR?'none':'1px solid var(--border)'};border-bottom:${noB?'none':'1px solid var(--border)'}">
+      <div style="font-size:11px;font-weight:${isToday?'700':'400'};color:${isToday?'var(--accent)':dc}">${d}</div>`;
+    if(hits) hits.slice(0,2).forEach(it => {
+      const pal=TL_PALETTE[it.idx%TL_PALETTE.length];
+      const nm=it.s.name.length>5?it.s.name.slice(0,5)+'…':it.s.name;
+      cal+=`<div style="margin-top:2px;font-size:9px;padding:1px 3px;border-radius:3px;background:${pal.bg};color:${pal.bar};white-space:nowrap;overflow:hidden">${nm}</div>`;
+    });
+    if(hits&&hits.length>2) cal+=`<div style="font-size:9px;color:var(--text-muted)">+${hits.length-2}</div>`;
+    cal+='</div>';
+  }
+  const rem=(7-(firstDow+daysInMonth)%7)%7;
+  for(let i=0;i<rem;i++) cal+=`<div style="min-height:50px;background:var(--surface2);border-right:${i<rem-1?'1px solid var(--border)':'none'}"></div>`;
+  cal+='</div></div>';
+  calEl.innerHTML=cal;
+
+  // 날짜별 목록
+  if(items.length===0){
+    emptyEl.style.display='block'; listEl.style.display='none'; calEl.style.display='none';
+    return;
+  }
+  emptyEl.style.display='none'; listEl.style.display='flex'; calEl.style.display='block';
+
+  const grouped={};
+  items.forEach(it=>{ const d=it.pd.getDate(); if(!grouped[d]) grouped[d]=[]; grouped[d].push(it); });
+  const DOW_KR=['일','월','화','수','목','금','토'];
+
+  listEl.innerHTML = Object.keys(grouped).sort((a,b)=>+a-+b).map(day=>{
+    const hits=grouped[day];
+    const dayTotal=hits.reduce((a,x)=>a+x.totalDiv,0);
+    const d=hits[0].pd;
+    const isWk=d.getDay()===0||d.getDay()===6;
+    const dc=d.getDay()===0?'var(--red)':d.getDay()===6?'var(--accent2)':'var(--text)';
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="text-align:center;min-width:32px">
+            <div style="font-size:18px;font-weight:700;color:${dc};line-height:1">${day}</div>
+            <div style="font-size:10px;color:var(--text-muted)">${DOW_KR[d.getDay()]}요일</div>
+          </div>
+          <div style="width:1px;height:28px;background:var(--border)"></div>
+          <div>
+            <div style="font-size:10px;color:var(--text-muted)">배당지급 · ${hits.length}종목</div>
+            <div style="font-size:14px;font-weight:700;color:var(--accent)">${Math.round(dayTotal).toLocaleString()}원</div>
+          </div>
+        </div>
+        <span style="font-size:18px;opacity:.3">💰</span>
+      </div>
+      ${hits.map(it=>{
+        const pal=TL_PALETTE[it.idx%TL_PALETTE.length];
+        const pnl=(Number(it.s.curPrice)||0)-(Number(it.s.avgPrice)||0);
+        const dy=(Number(it.s.curPrice)||0)>0?(Number(it.entry.divPerShare)||0)/Number(it.s.curPrice)*12*100:0;
+        const ps=pnl>0?'+':'';
+        const pc=pnl>0?'var(--accent)':pnl<0?'var(--red)':'var(--text-muted)';
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border-light)">
+          <div style="width:3px;height:40px;border-radius:2px;background:${pal.bar};flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.s.name}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${(Number(it.s.qty)||0).toLocaleString()}주 · 1주당 ${Math.round(Number(it.entry.divPerShare)||0).toLocaleString()}원 · 연배당수익률 ${dy.toFixed(2)}%</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:14px;font-weight:700">${Math.round(it.totalDiv).toLocaleString()}원</div>
+            <div style="font-size:11px;color:${pc}">${ps}${Math.round(pnl).toLocaleString()}원/주</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════ HISTORY MODAL ══════════════════════ */
+let ccHistStockId = null;
+
+function ccHistOpen(id) {
+  ccHistStockId = id;
+  const s = ccPortfolio.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('ccHistModalTitle').textContent = `배당 이력 — ${s.name}`;
+  // 현재 수정 모달의 값으로 폼 초기값 채우기
+  const ym = new Date().toISOString().slice(0,7);
+  document.getElementById('cc-hist-paydate').value = s.payDate || '';
+  document.getElementById('cc-hist-exdate').value  = s.exDate  || '';
+  document.getElementById('cc-hist-div').value     = s.divPerShare || '';
+  document.getElementById('cc-hist-annyield').value= s.annYield || '';
+  document.getElementById('cc-hist-anndiv').value  = s.annDiv   || '';
+  ccHistRenderTable(s);
+  document.getElementById('ccHistModal').classList.add('show');
+}
+
+function ccHistClose() {
+  document.getElementById('ccHistModal').classList.remove('show');
+  ccHistStockId = null;
+}
+
+function ccHistAdd() {
+  const s = ccPortfolio.find(x => x.id === ccHistStockId);
+  if (!s) return;
+  const payDate  = document.getElementById('cc-hist-paydate').value;
+  const exDate   = document.getElementById('cc-hist-exdate').value;
+  const div      = parseFloat(document.getElementById('cc-hist-div').value)      || 0;
+  const annYield = parseFloat(document.getElementById('cc-hist-annyield').value) || 0;
+  const annDiv   = parseFloat(document.getElementById('cc-hist-anndiv').value)   || 0;
+  if (!payDate && !div) { showToast('배당지급일 또는 배당금을 입력해주세요.', 'var(--red)'); return; }
+  const ym = payDate ? payDate.slice(0,7) : new Date().toISOString().slice(0,7);
+  if (!s.divHistory) s.divHistory = [];
+  const existing = s.divHistory.findIndex(h => h.ym === ym);
+  const entry = { ym, divPerShare: div, exDate, payDate, annYield, annDiv };
+  if (existing >= 0) {
+    if (!confirm(`${ym} 이력이 이미 있습니다. 덮어쓸까요?`)) return;
+    s.divHistory[existing] = entry;
+  } else {
+    s.divHistory.push(entry);
+  }
+  s.divHistory.sort((a,b) => b.ym.localeCompare(a.ym));
+  // 가장 최신 이력으로 현재 값도 업데이트
+  s.divPerShare = div; s.exDate = exDate; s.payDate = payDate;
+  s.annYield = annYield; s.annDiv = annDiv;
+  ccSaveLocal();
+  ccHistRenderTable(s);
+  ccRender();
+  ccRenderTimeline();
+  showToast(`${ym} 배당 이력 저장!`);
+}
+
+function ccHistDelete(stockId, ym) {
+  const s = ccPortfolio.find(x => x.id === stockId);
+  if (!s || !confirm(`${ym} 이력을 삭제하시겠습니까?`)) return;
+  s.divHistory = (s.divHistory||[]).filter(h => h.ym !== ym);
+  if (s.divHistory.length > 0) {
+    const latest = s.divHistory[0];
+    s.divPerShare = latest.divPerShare; s.exDate = latest.exDate;
+    s.payDate = latest.payDate; s.annYield = latest.annYield; s.annDiv = latest.annDiv;
+  }
+  ccSaveLocal();
+  ccHistRenderTable(s);
+  ccRender();
+  ccRenderTimeline();
+  showToast(`${ym} 이력 삭제됨`, 'var(--red)');
+}
+
+function ccHistRenderTable(s) {
+  const el = document.getElementById('cc-hist-table');
+  if (!el) return;
+  const hist = (s.divHistory || []).slice().sort((a,b) => b.ym.localeCompare(a.ym));
+  if (hist.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px">저장된 이력이 없습니다</div>';
+    return;
+  }
+  el.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">
+    <thead><tr style="background:var(--surface2)">
+      <th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap">연월</th>
+      <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap">배당락일</th>
+      <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap">배당지급일</th>
+      <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap">1주당(월)</th>
+      <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap">공시수익률(연)</th>
+      <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap">1주당(연)</th>
+      <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap">총배당(월)</th>
+      <th style="padding:8px;border-bottom:1px solid var(--border)"></th>
+    </tr></thead>
+    <tbody>
+    ${hist.map(h => {
+      const totalDiv = (Number(s.qty)||0)*(Number(h.divPerShare)||0);
+      return `<tr style="border-bottom:1px solid var(--border-light)">
+        <td style="padding:8px 10px;font-weight:700;color:var(--accent);white-space:nowrap">${h.ym}</td>
+        <td style="padding:8px 10px;text-align:right;white-space:nowrap">${h.exDate||'—'}</td>
+        <td style="padding:8px 10px;text-align:right;white-space:nowrap">${h.payDate||'—'}</td>
+        <td style="padding:8px 10px;text-align:right;white-space:nowrap">${h.divPerShare?Math.round(h.divPerShare).toLocaleString()+'원':'—'}</td>
+        <td style="padding:8px 10px;text-align:right;white-space:nowrap">${h.annYield?h.annYield.toFixed(2)+'%':'—'}</td>
+        <td style="padding:8px 10px;text-align:right;white-space:nowrap">${h.annDiv?Math.round(h.annDiv).toLocaleString()+'원':'—'}</td>
+        <td style="padding:8px 10px;text-align:right;color:var(--accent);font-weight:700;white-space:nowrap">${totalDiv?Math.round(totalDiv).toLocaleString()+'원':'—'}</td>
+        <td style="padding:8px;text-align:center"><button class="btn-red" onclick="ccHistDelete(${s.id},'${h.ym}')" style="padding:3px 8px;font-size:10px">삭제</button></td>
+      </tr>`;
+    }).join('')}
+    </tbody>
+  </table></div>`;
+}
+
 /* ─── Cloud: Google Sheets ─── */
 async function ccSaveToSheet() {
   if (ccPortfolio.length === 0) { showToast('저장할 종목이 없습니다.', 'var(--red)'); return; }
@@ -2831,8 +3170,6 @@ async function ccSaveToSheet() {
   try {
     const resp = await fetch(CC_GSHEET_URL, {
       method: 'POST',
-      mode: 'cors',
-      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'save', data: ccPortfolio }),
     });
     const json = await resp.json();
@@ -2851,27 +3188,22 @@ async function ccSaveToSheet() {
 async function ccLoadFromSheet() {
   try {
     showToast('☁️ 클라우드에서 불러오는 중...');
-    const resp = await fetch(CC_GSHEET_URL, { mode: 'cors' });
+    const resp = await fetch(CC_GSHEET_URL);
     const json = await resp.json();
     if (json.status === 'ok' && json.data && json.data.length > 0) {
-      ccPortfolio = json.data
-        .filter(s => s.id && s.name && typeof s.name === 'string' && isNaN(Number(s.name)) === false ? false : s.name)
-        .filter(s => s.id && Number(s.id) > 0 && s.name)
-        .map(s => ({
-          ...s,
-          id          : Number(s.id),
-          name        : String(s.name || ''),
-          qty         : Number(s.qty)         || 0,
-          avgPrice    : Number(s.avgPrice)    || 0,
-          curPrice    : Number(s.curPrice)    || 0,
-          divPerShare : Number(s.divPerShare) || 0,
-          exDate      : String(s.exDate  || ''),
-          payDate     : String(s.payDate || ''),
-          annYield    : Number(s.annYield)    || 0,
-          annDiv      : Number(s.annDiv)      || 0,
-        }));
+      ccPortfolio = json.data.map(s => ({
+        ...s,
+        id          : Number(s.id),
+        qty         : Number(s.qty),
+        avgPrice    : Number(s.avgPrice),
+        curPrice    : Number(s.curPrice),
+        divPerShare : Number(s.divPerShare),
+        annYield    : Number(s.annYield),
+        annDiv      : Number(s.annDiv),
+      }));
       ccSaveLocal();
       ccRender();
+      ccRenderTimeline();
       showToast(`☁️ ${ccPortfolio.length}개 종목 불러오기 완료!`);
     } else {
       showToast('클라우드에 저장된 데이터가 없습니다.');
@@ -2920,9 +3252,9 @@ renderPortfolio();
 // CC render: 탭 전환 시 또는 직접 호출 시에도 안전하게 동작
 document.addEventListener('DOMContentLoaded', function() {
   ccRender();
+  ccRenderTimeline();
 });
-// DOMContentLoaded가 이미 지난 경우를 위한 즉시 실행
-if (document.readyState !== 'loading') ccRender();
+if (document.readyState !== 'loading') { ccRender(); ccRenderTimeline(); }
 </script>
 </body>
 </html>
