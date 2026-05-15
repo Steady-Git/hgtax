@@ -2703,16 +2703,6 @@ const CC_GSHEET_URL = 'https://script.google.com/macros/s/AKfycbzAZRTqrJ3nxixSDM
 let ccPortfolio = (function() {
   try {
     const data = JSON.parse(localStorage.getItem('ccPortfolio') || '[]');
-    // qty=0으로 잘못 저장된 이력 자동 복구
-    data.forEach(s => {
-      if (Array.isArray(s.divHistory)) {
-        s.divHistory.forEach(h => {
-          if ((h.qty == null || Number(h.qty) === 0) && Number(s.qty) > 0) {
-            h.qty = Number(s.qty);
-          }
-        });
-      }
-    });
     return data;
   } catch(e) { return []; }
 })();
@@ -2987,7 +2977,7 @@ function ccUpdateSummaryByMonth() {
       }
     }
     if (entry) {
-      const q = (entry.qty != null && Number(entry.qty) > 0) ? Number(entry.qty) : (Number(s.qty)||0);
+      const q = (entry.qty != null && !isNaN(Number(entry.qty))) ? Number(entry.qty) : (Number(s.qty)||0);
       monthDiv    += q * (Number(entry.divPerShare) || 0);
       monthAnnDiv += q * (Number(entry.annDiv)      || 0);
       monthCount++;
@@ -3138,7 +3128,7 @@ function ccRenderTimeline() {
     if (entry && entry.payDate) {
       const pd = ccTlParseDate(entry.payDate);
       if (pd) {
-        const hQty = (entry.qty != null && Number(entry.qty) > 0) ? Number(entry.qty) : (Number(s.qty)||0);
+        const hQty = (entry.qty != null && !isNaN(Number(entry.qty))) ? Number(entry.qty) : (Number(s.qty)||0);
         items.push({ s, entry, pd, idx, qty: hQty, totalDiv: hQty*(Number(entry.divPerShare)||0) });
       }
     }
@@ -3238,7 +3228,7 @@ function ccRenderTimeline() {
         const pal=TL_PALETTE[it.idx%TL_PALETTE.length];
         const pnl=(Number(it.s.curPrice)||0)-(Number(it.s.avgPrice)||0);
         const dy=(Number(it.s.curPrice)||0)>0?(Number(it.entry.divPerShare)||0)/Number(it.s.curPrice)*12*100:0;
-        const dispQty=(it.qty > 0) ? it.qty : (Number(it.s.qty)||0);
+        const dispQty=(it.qty != null && !isNaN(it.qty)) ? it.qty : (Number(it.s.qty)||0);
         const ps=pnl>0?'+':'';
         const pc=pnl>0?'var(--accent)':pnl<0?'var(--red)':'var(--text-muted)';
         return `<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border-light)">
@@ -3286,7 +3276,7 @@ function ccHistAdd() {
   const payDate  = document.getElementById('cc-hist-paydate').value;
   const exDate   = document.getElementById('cc-hist-exdate').value;
   const _qtyRaw   = parseFloat(document.getElementById('cc-hist-qty').value);
-  const qty      = (_qtyRaw > 0) ? _qtyRaw : (Number(s.qty) || 0);
+  const qty      = isNaN(_qtyRaw) ? (Number(s.qty) || 0) : _qtyRaw;
   const div      = parseFloat(document.getElementById('cc-hist-div').value)      || 0;
   const annYield = parseFloat(document.getElementById('cc-hist-annyield').value) || 0;
   const annDiv   = parseFloat(document.getElementById('cc-hist-anndiv').value)   || 0;
@@ -3304,7 +3294,7 @@ function ccHistAdd() {
   s.divHistory.sort((a,b) => b.ym.localeCompare(a.ym));
   // 최신 이력으로 현재 값 업데이트
   const latest = s.divHistory[0];
-  s.qty = (latest.qty > 0) ? latest.qty : s.qty;
+  if (latest.qty != null && !isNaN(Number(latest.qty))) s.qty = latest.qty;
   s.divPerShare = latest.divPerShare; s.exDate = latest.exDate;
   s.payDate = latest.payDate; s.annYield = latest.annYield; s.annDiv = latest.annDiv;
   ccSaveLocal();
@@ -3321,7 +3311,7 @@ function ccHistDelete(stockId, ym) {
   s.divHistory = (s.divHistory||[]).filter(h => h.ym !== ym);
   if (s.divHistory.length > 0) {
     const latest = s.divHistory[0];
-    if (latest.qty > 0) s.qty = latest.qty;
+    if (latest.qty != null && !isNaN(Number(latest.qty))) s.qty = latest.qty;
     s.divPerShare = latest.divPerShare; s.exDate = latest.exDate;
     s.payDate = latest.payDate; s.annYield = latest.annYield; s.annDiv = latest.annDiv;
   }
@@ -3342,7 +3332,7 @@ function ccHistRenderTable(s) {
     return;
   }
   const totalHistDiv = hist.reduce((a,h) => {
-    const q = (h.qty != null && Number(h.qty) > 0) ? Number(h.qty) : (Number(s.qty)||0);
+    const q = (h.qty != null && !isNaN(Number(h.qty))) ? Number(h.qty) : (Number(s.qty)||0);
     return a + q*(Number(h.divPerShare)||0);
   }, 0);
   el.innerHTML = `<div style="background:var(--surface2);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;gap:16px;flex-wrap:wrap">
@@ -3365,7 +3355,7 @@ function ccHistRenderTable(s) {
     </tr></thead>
     <tbody>
     ${hist.map(h => {
-      const hQty = (h.qty != null && Number(h.qty) > 0) ? Number(h.qty) : (Number(s.qty)||0);
+      const hQty = (h.qty != null && !isNaN(Number(h.qty))) ? Number(h.qty) : (Number(s.qty)||0);
       const totalDiv = hQty*(Number(h.divPerShare)||0);
       return `<tr style="border-bottom:1px solid var(--border-light)">
         <td style="padding:8px 10px;font-weight:700;color:var(--accent);white-space:nowrap">${h.ym}</td>
@@ -3446,7 +3436,7 @@ async function ccLoadFromSheet() {
           const hq = Number(h.qty) || 0;
           return {
             ...h,
-            qty         : hq > 0 ? hq : (Number(s.qty) || 0), // qty=0이면 종목 수량으로 복구
+            qty         : hq, // 저장된 qty 그대로 복원
             divPerShare : Number(h.divPerShare) || 0,
             annYield    : Number(h.annYield)    || 0,
             annDiv      : Number(h.annDiv)      || 0,
