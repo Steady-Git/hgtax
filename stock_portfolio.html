@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>보유 주식 관리</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #1f2d47;
+    --accent: #00d4aa;
+    --accent2: #4f8ef7;
+    --red: #ff4f6b;
+    --yellow: #f5c842;
+    --text: #e2e8f0;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { overflow-x: clip; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    overflow-x: clip;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,170,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,170,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Top Nav ── */
+  .top-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 48px;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+  }
+
+  .nav-logo-text {
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .nav-logo-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+  /* ── Broker tabs ── */
+  .broker-tab-bar {
+    display: flex;
+    align-items: stretch;
+    height: 50px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .broker-tab-bar::-webkit-scrollbar { display: none; }
+
+  .broker-tab {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0 20px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .broker-tab:hover { color: var(--text); }
+  .broker-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 700;
+    background: rgba(0,212,170,0.04);
+  }
+
+  .broker-tab-add {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 16px;
+    transition: color 0.2s;
+  }
+  .broker-tab-add:hover { color: var(--accent); }
+
+  /* ── Page / Wrapper ── */
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 36px 20px 80px;
+  }
+
+  /* ── Header ── */
+  header { margin-bottom: 32px; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,212,170,0.1);
+    border: 1px solid rgba(0,212,170,0.3);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    font-weight: 500;
+  }
+
+  .badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  h1 {
+    font-size: clamp(24px, 5vw, 38px);
+    font-weight: 900;
+    letter-spacing: -1px;
+    line-height: 1.15;
+  }
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    color: var(--text-muted);
+    margin-top: 8px;
+    font-size: 13px;
+    font-weight: 300;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .card-title {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  /* ── Summary grid ── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .summary-item {
+    padding: 20px 18px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    min-width: 0;
+    overflow: hidden;
+  }
+  .summary-item:nth-child(2n) { border-right: none; }
+  .summary-item:last-child,
+  .summary-item:nth-last-child(2):nth-child(odd) { border-bottom: none; }
+  .summary-item:nth-last-child(1),
+  .summary-item:nth-last-child(2) { border-bottom: none; }
+
+  .summary-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-bottom: 8px;
+    white-space: nowrap;
+  }
+
+  .summary-val {
+    font-size: clamp(14px, 3.8vw, 22px);
+    font-weight: 900;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: -1px;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .summary-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .up { color: var(--red); }
+  .down { color: var(--accent2); }
+  .neutral { color: var(--text-muted); }
+
+  /* ── Add form ── */
+  .add-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 20px;
+  }
+
+  .field-full { grid-column: 1 / -1; }
+
+  .field label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 7px;
+  }
+
+  .field input, .field select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+    cursor: pointer;
+    color-scheme: dark;
+  }
+
+  .field input:focus, .field select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,212,170,0.1);
+  }
+
+  .field input::placeholder { color: var(--text-muted); font-family: 'Noto Sans KR', sans-serif; font-size: 12px; }
+
+  .form-actions {
+    padding: 0 20px 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    padding: 11px 20px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    font-family: 'Noto Sans KR', sans-serif;
+    height: 42px;
+  }
+
+  .btn:hover { background: #00f0c0; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,212,170,0.3); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Noto Sans KR', sans-serif;
+    height: 42px;
+    white-space: nowrap;
+  }
+
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-sm {
+    background: rgba(0,212,170,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(0,212,170,0.25);
+    border-radius: 7px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Noto Sans KR', sans-serif;
+    white-space: nowrap;
+  }
+  .btn-sm:hover { background: rgba(0,212,170,0.2); }
+
+  .btn-sm-red {
+    background: rgba(255,79,107,0.1);
+    color: var(--red);
+    border: 1px solid rgba(255,79,107,0.25);
+    border-radius: 7px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Noto Sans KR', sans-serif;
+    white-space: nowrap;
+  }
+  .btn-sm-red:hover { background: rgba(255,79,107,0.2); }
+
+  /* ── Table ── */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 700px;
+  }
+
+  th {
+    background: var(--surface2);
+    padding: 11px 14px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  th.right, td.right { text-align: right; }
+
+  td {
+    padding: 14px 14px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: -0.3px;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.015); }
+
+  .td-name {
+    font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text);
+  }
+  .td-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── Profit bar ── */
+  .profit-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .profit-bar-bg {
+    flex: 1;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--border);
+    overflow: hidden;
+    min-width: 50px;
+  }
+
+  .profit-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  /* ── Broker section ── */
+  .broker-section {
+    margin-bottom: 28px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .broker-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .broker-color-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .broker-name {
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+  }
+
+  .broker-summary-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-left: auto;
+  }
+
+  .chip {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* ── Empty state ── */
+  .empty-state {
+    text-align: center;
+    padding: 56px 24px;
+    color: var(--text-muted);
+  }
+
+  .empty-icon { font-size: 40px; margin-bottom: 14px; opacity: 0.4; }
+  .empty-title { font-size: 16px; font-weight: 700; color: var(--text-dim); margin-bottom: 6px; }
+  .empty-sub { font-size: 13px; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 13px 20px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 1000;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    max-width: 280px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    width: 100%;
+    max-width: 460px;
+    animation: slideUp 0.25s ease;
+  }
+
+  .modal h2 {
+    font-size: 17px;
+    font-weight: 900;
+    margin-bottom: 22px;
+    letter-spacing: -0.5px;
+  }
+
+  .modal .field { margin-bottom: 14px; }
+
+  .modal-btns {
+    display: flex;
+    gap: 10px;
+    margin-top: 22px;
+  }
+  .modal-btns .btn { flex: 1; }
+  .modal-btns .btn-ghost { flex: 1; }
+
+  /* ── Broker add modal ── */
+  .broker-color-picker {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+
+  .color-swatch {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .color-swatch:hover { transform: scale(1.15); }
+  .color-swatch.selected { border-color: white; box-shadow: 0 0 0 2px rgba(255,255,255,0.4); }
+
+  /* ── Controls bar ── */
+  .controls-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Allocation bar ── */
+  .alloc-bar {
+    height: 6px;
+    border-radius: 3px;
+    display: flex;
+    overflow: hidden;
+    gap: 1px;
+    margin-top: 6px;
+  }
+
+  .alloc-seg {
+    height: 100%;
+    transition: width 0.5s ease;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .add-form-grid { grid-template-columns: 1fr; }
+    .field-full { grid-column: 1; }
+    .broker-summary-chips { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Top Navigation -->
+<nav class="top-nav">
+  <div class="nav-logo">
+    <div class="nav-logo-dot"></div>
+    <span class="nav-logo-text">Stock Portfolio</span>
+    <div class="nav-logo-dot"></div>
+  </div>
+  <div class="broker-tab-bar" id="brokerTabBar">
+    <button class="broker-tab active" data-broker-id="all" onclick="switchTab('all')">전체 현황</button>
+    <!-- dynamic tabs inserted here -->
+    <button class="broker-tab-add" onclick="openAddBrokerModal()" title="증권사 추가">＋</button>
+  </div>
+</nav>
+
+<!-- Main Wrapper -->
+<div class="wrapper">
+
+  <!-- Header -->
+  <header>
+    <div class="badge">보유 주식 관리</div>
+    <h1>내 <span>포트폴리오</span></h1>
+    <p class="subtitle">증권사별 보유 주식 현황을 한눈에 확인하세요</p>
+  </header>
+
+  <!-- Total Summary -->
+  <div class="card" id="totalSummaryCard">
+    <div class="card-title">
+      <span id="summaryTitle">전체 포트폴리오 요약</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-ghost" onclick="openImportExport()" style="height:32px;padding:0 12px;font-size:11px">📤 내보내기/불러오기</button>
+      </div>
+    </div>
+    <div class="summary-grid" id="summaryGrid">
+      <div class="summary-item">
+        <div class="summary-label">총 매입금액</div>
+        <div class="summary-val" id="sumBuy">—</div>
+        <div class="summary-sub">원</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">총 평가금액</div>
+        <div class="summary-val" id="sumEval">—</div>
+        <div class="summary-sub">원</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">평가손익</div>
+        <div class="summary-val" id="sumPnl">—</div>
+        <div class="summary-sub" id="sumPnlPct">—</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">보유 종목 수</div>
+        <div class="summary-val" id="sumCount">0</div>
+        <div class="summary-sub" id="sumCountSub">종목 · 0개 증권사</div>
+      </div>
+    </div>
+    <!-- Allocation bar -->
+    <div id="allocBarWrap" style="padding:14px 20px;border-top:1px solid var(--border);display:none">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px">증권사별 비중</div>
+      <div class="alloc-bar" id="allocBar"></div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px" id="allocLegend"></div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div id="mainContent"></div>
+
+  <!-- Add Stock Card (shown per broker tab) -->
+  <div class="card" id="addStockCard" style="display:none">
+    <div class="card-title">종목 추가</div>
+    <div class="add-form-grid">
+      <div class="field field-full">
+        <label>종목명</label>
+        <input type="text" id="f-name" placeholder="예: 삼성전자" autocomplete="off" />
+      </div>
+      <div class="field field-full">
+        <label>종목코드 (선택)</label>
+        <input type="text" id="f-code" placeholder="예: 005930" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>보유수량 (주)</label>
+        <input type="number" id="f-qty" placeholder="0" min="0" />
+      </div>
+      <div class="field">
+        <label>평균매입가 (원)</label>
+        <input type="number" id="f-avg" placeholder="0" min="0" step="1" />
+      </div>
+      <div class="field">
+        <label>현재가 (원)</label>
+        <input type="number" id="f-cur" placeholder="0" min="0" step="1" />
+      </div>
+      <div class="field">
+        <label>메모 (선택)</label>
+        <input type="text" id="f-memo" placeholder="예: 분할매수 진행중" autocomplete="off" />
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-ghost" onclick="clearAddForm()">초기화</button>
+      <button class="btn" onclick="addStock()">+ 종목 추가</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Add Broker Modal -->
+<div class="modal-overlay" id="addBrokerModal">
+  <div class="modal">
+    <h2>증권사 추가</h2>
+    <div class="field" style="margin-bottom:14px">
+      <label>증권사 이름</label>
+      <input type="text" id="broker-name-input" placeholder="예: 한국투자증권" autocomplete="off" />
+    </div>
+    <div class="field" style="margin-bottom:6px">
+      <label>색상 선택</label>
+      <div class="broker-color-picker" id="colorPicker"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-ghost" onclick="closeAddBrokerModal()">취소</button>
+      <button class="btn" onclick="confirmAddBroker()">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Stock Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h2>종목 수정</h2>
+    <input type="hidden" id="edit-id" />
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field" style="grid-column:1/-1">
+        <label>종목명</label>
+        <input type="text" id="edit-name" />
+      </div>
+      <div class="field" style="grid-column:1/-1">
+        <label>종목코드</label>
+        <input type="text" id="edit-code" />
+      </div>
+      <div class="field">
+        <label>보유수량 (주)</label>
+        <input type="number" id="edit-qty" min="0" />
+      </div>
+      <div class="field">
+        <label>평균매입가 (원)</label>
+        <input type="number" id="edit-avg" min="0" step="1" />
+      </div>
+      <div class="field">
+        <label>현재가 (원)</label>
+        <input type="number" id="edit-cur" min="0" step="1" />
+      </div>
+      <div class="field">
+        <label>메모</label>
+        <input type="text" id="edit-memo" />
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-ghost" onclick="closeEditModal()">취소</button>
+      <button class="btn" onclick="saveEdit()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Broker Modal -->
+<div class="modal-overlay" id="editBrokerModal">
+  <div class="modal">
+    <h2>증권사 수정</h2>
+    <input type="hidden" id="ebr-id" />
+    <div class="field" style="margin-bottom:14px">
+      <label>증권사 이름</label>
+      <input type="text" id="ebr-name" placeholder="증권사 이름" />
+    </div>
+    <div class="field" style="margin-bottom:6px">
+      <label>색상</label>
+      <div class="broker-color-picker" id="ebrColorPicker"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-ghost" onclick="document.getElementById('editBrokerModal').classList.remove('show')">취소</button>
+      <button class="btn" onclick="saveEditBroker()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import/Export Modal -->
+<div class="modal-overlay" id="ieModal">
+  <div class="modal">
+    <h2>📤 내보내기 / 불러오기</h2>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px">JSON 파일로 데이터를 백업하거나 복원할 수 있습니다.</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn" onclick="exportJSON()" style="width:100%">📤 JSON으로 내보내기</button>
+      <label class="btn-ghost" style="width:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;height:42px;font-size:13px;font-weight:600">
+        📥 JSON에서 불러오기
+        <input type="file" id="importFile" accept=".json" onchange="importJSON(event)" style="display:none">
+      </label>
+    </div>
+    <div class="modal-btns" style="margin-top:16px">
+      <button class="btn-ghost" onclick="document.getElementById('ieModal').classList.remove('show')" style="width:100%">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  State
+// ═══════════════════════════════════════════
+const STORAGE_KEY = 'stock_portfolio_v1';
+const BROKER_COLORS = [
+  '#00d4aa','#4f8ef7','#f5c842','#ff4f6b','#a78bfa',
+  '#fb923c','#34d399','#f472b6','#60a5fa','#facc15',
+  '#4ade80','#c084fc','#f87171','#38bdf8','#a3e635'
+];
+
+let state = {
+  brokers: [],   // { id, name, color }
+  stocks: [],    // { id, brokerId, name, code, qty, avgPrice, curPrice, memo }
+  nextId: 1,
+  nextBrokerId: 1,
+};
+
+let currentTab = 'all';    // 'all' | brokerId
+let selectedBrokerColor = BROKER_COLORS[0];
+let editBrokerColor = BROKER_COLORS[0];
+
+// ═══════════════════════════════════════════
+//  Persistence
+// ═══════════════════════════════════════════
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      state = { ...state, ...parsed };
+    }
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════
+//  Helpers
+// ═══════════════════════════════════════════
+function fmt(n) {
+  if (n === undefined || n === null || isNaN(n)) return '—';
+  return Math.round(n).toLocaleString();
+}
+
+function fmtSign(n) {
+  if (!n) return '0';
+  return (n > 0 ? '+' : '') + fmt(n);
+}
+
+function fmtPct(n) {
+  if (!n && n !== 0) return '—';
+  return (n > 0 ? '+' : '') + n.toFixed(2) + '%';
+}
+
+function showToast(msg, color) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = color || 'var(--accent)';
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function getBroker(id) {
+  return state.brokers.find(b => b.id === id);
+}
+
+function getBrokerStocks(brokerId) {
+  return state.stocks.filter(s => s.brokerId === brokerId);
+}
+
+function calcStats(stocks) {
+  let totalBuy = 0, totalEval = 0;
+  for (const s of stocks) {
+    const qty = Number(s.qty) || 0;
+    const avg = Number(s.avgPrice) || 0;
+    const cur = Number(s.curPrice) || 0;
+    totalBuy  += qty * avg;
+    totalEval += qty * cur;
+  }
+  const pnl = totalEval - totalBuy;
+  const pnlPct = totalBuy > 0 ? (pnl / totalBuy * 100) : 0;
+  return { totalBuy, totalEval, pnl, pnlPct };
+}
+
+// ═══════════════════════════════════════════
+//  Tab switching
+// ═══════════════════════════════════════════
+function switchTab(id) {
+  currentTab = id;
+
+  // update tab buttons
+  document.querySelectorAll('.broker-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.brokerId == id);
+  });
+
+  render();
+}
+
+function rebuildTabs() {
+  const bar = document.getElementById('brokerTabBar');
+  // Remove all broker tabs (keep 'all' and '+')
+  bar.querySelectorAll('.broker-tab:not([data-broker-id="all"])').forEach(el => el.remove());
+  const addBtn = bar.querySelector('.broker-tab-add');
+
+  state.brokers.forEach(br => {
+    const btn = document.createElement('button');
+    btn.className = 'broker-tab' + (currentTab == br.id ? ' active' : '');
+    btn.dataset.brokerId = br.id;
+    btn.innerHTML = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${br.color};margin-right:6px;vertical-align:middle"></span>${br.name}`;
+    btn.onclick = () => switchTab(br.id);
+    bar.insertBefore(btn, addBtn);
+  });
+
+  // update 'all' tab
+  bar.querySelector('[data-broker-id="all"]').classList.toggle('active', currentTab === 'all');
+}
+
+// ═══════════════════════════════════════════
+//  Main Render
+// ═══════════════════════════════════════════
+function render() {
+  renderSummary();
+  renderMainContent();
+  updateAddStockCard();
+}
+
+function renderSummary() {
+  const tab = currentTab;
+  const stocks = tab === 'all' ? state.stocks : state.stocks.filter(s => s.brokerId == tab);
+  const brokers = tab === 'all' ? state.brokers : state.brokers.filter(b => b.id == tab);
+  const broker = tab !== 'all' ? getBroker(Number(tab)) : null;
+  const { totalBuy, totalEval, pnl, pnlPct } = calcStats(stocks);
+
+  document.getElementById('summaryTitle').textContent =
+    broker ? `${broker.name} 요약` : '전체 포트폴리오 요약';
+
+  document.getElementById('sumBuy').textContent = totalBuy ? fmt(totalBuy) : '—';
+  document.getElementById('sumEval').textContent = totalEval ? fmt(totalEval) : '—';
+
+  const pnlEl = document.getElementById('sumPnl');
+  pnlEl.textContent = stocks.length ? fmtSign(pnl) : '—';
+  pnlEl.className = 'summary-val ' + (pnl > 0 ? 'up' : pnl < 0 ? 'down' : 'neutral');
+
+  const pnlPctEl = document.getElementById('sumPnlPct');
+  pnlPctEl.textContent = stocks.length ? fmtPct(pnlPct) : '—';
+  pnlPctEl.className = 'summary-sub ' + (pnlPct > 0 ? 'up' : pnlPct < 0 ? 'down' : '');
+
+  document.getElementById('sumCount').textContent = stocks.length;
+  const brokerCount = tab === 'all' ? state.brokers.length : 1;
+  document.getElementById('sumCountSub').textContent =
+    `종목 · ${brokerCount}개 증권사`;
+
+  // Allocation bar (only in 'all' tab)
+  const allocWrap = document.getElementById('allocBarWrap');
+  if (tab === 'all' && state.brokers.length > 0 && totalEval > 0) {
+    allocWrap.style.display = '';
+    const bar = document.getElementById('allocBar');
+    const legend = document.getElementById('allocLegend');
+    bar.innerHTML = '';
+    legend.innerHTML = '';
+    state.brokers.forEach(br => {
+      const bStocks = getBrokerStocks(br.id);
+      const { totalEval: bEval } = calcStats(bStocks);
+      const pct = totalEval > 0 ? bEval / totalEval * 100 : 0;
+      if (pct > 0) {
+        const seg = document.createElement('div');
+        seg.className = 'alloc-seg';
+        seg.style.width = pct + '%';
+        seg.style.background = br.color;
+        bar.appendChild(seg);
+
+        const item = document.createElement('div');
+        item.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:11px;font-family:"JetBrains Mono",monospace;color:var(--text-muted)';
+        item.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:${br.color};display:inline-block;flex-shrink:0"></span>${br.name} <span style="color:var(--text);font-weight:700">${pct.toFixed(1)}%</span>`;
+        legend.appendChild(item);
+      }
+    });
+  } else {
+    allocWrap.style.display = 'none';
+  }
+}
+
+function renderMainContent() {
+  const content = document.getElementById('mainContent');
+
+  if (currentTab === 'all') {
+    renderAllTab(content);
+  } else {
+    renderBrokerTab(content, Number(currentTab));
+  }
+}
+
+function renderAllTab(container) {
+  if (state.brokers.length === 0) {
+    container.innerHTML = `
+      <div class="card">
+        <div class="empty-state">
+          <div class="empty-icon">🏦</div>
+          <div class="empty-title">증권사를 추가해 주세요</div>
+          <div class="empty-sub">상단 <b>＋</b> 버튼을 눌러 증권사를 등록하세요</div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  let html = '';
+  state.brokers.forEach(br => {
+    const stocks = getBrokerStocks(br.id);
+    const { totalBuy, totalEval, pnl, pnlPct } = calcStats(stocks);
+    const pnlColor = pnl > 0 ? 'var(--red)' : pnl < 0 ? 'var(--accent2)' : 'var(--text-muted)';
+    html += `
+      <div class="card broker-section">
+        <div class="card-title" style="padding:14px 18px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="width:10px;height:10px;border-radius:50%;background:${br.color};display:inline-block;flex-shrink:0"></span>
+            <span style="font-size:13px;color:var(--text);font-weight:700">${br.name}</span>
+            <span style="font-size:11px;color:var(--text-muted)">${stocks.length}종목</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            ${totalBuy ? `<span class="chip">매입 ${fmt(totalBuy)}원</span>` : ''}
+            ${totalEval ? `<span class="chip" style="color:${pnlColor}">${pnl >= 0 ? '▲' : '▼'} ${fmtSign(pnl)}원 (${fmtPct(pnlPct)})</span>` : ''}
+            <button class="btn-sm" onclick="switchTab(${br.id})" style="height:26px;font-size:10px">상세보기</button>
+          </div>
+        </div>
+        ${renderStockTable(stocks, false)}
+      </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+function renderBrokerTab(container, brokerId) {
+  const broker = getBroker(brokerId);
+  if (!broker) { container.innerHTML = ''; return; }
+  const stocks = getBrokerStocks(brokerId);
+
+  container.innerHTML = `
+    <div class="card">
+      <div class="card-title" style="padding:14px 18px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:10px;height:10px;border-radius:50%;background:${broker.color};display:inline-block"></span>
+          <span style="font-size:13px;color:var(--text);font-weight:700">${broker.name}</span>
+          <span style="font-size:11px;color:var(--text-muted)">${stocks.length}종목</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-sm" onclick="openEditBrokerModal(${broker.id})">수정</button>
+          <button class="btn-sm-red" onclick="deleteBroker(${broker.id})">삭제</button>
+        </div>
+      </div>
+      ${renderStockTable(stocks, true)}
+    </div>`;
+}
+
+function renderStockTable(stocks, showActions) {
+  if (stocks.length === 0) {
+    return `<div class="empty-state" style="padding:40px 24px">
+      <div class="empty-icon" style="font-size:28px">📊</div>
+      <div class="empty-title">보유 종목이 없습니다</div>
+      <div class="empty-sub">아래 폼에서 종목을 추가해 보세요</div>
+    </div>`;
+  }
+
+  // calc max eval for bar scaling
+  let maxEval = 0;
+  stocks.forEach(s => {
+    const v = (Number(s.qty)||0) * (Number(s.curPrice)||0);
+    if (v > maxEval) maxEval = v;
+  });
+
+  const rows = stocks.map(s => {
+    const qty = Number(s.qty) || 0;
+    const avg = Number(s.avgPrice) || 0;
+    const cur = Number(s.curPrice) || 0;
+    const buyAmt = qty * avg;
+    const evalAmt = qty * cur;
+    const pnl = evalAmt - buyAmt;
+    const pnlPct = buyAmt > 0 ? pnl / buyAmt * 100 : 0;
+    const pnlColor = pnl > 0 ? 'var(--red)' : pnl < 0 ? 'var(--accent2)' : 'var(--text-muted)';
+    const barPct = maxEval > 0 ? Math.min(evalAmt / maxEval * 100, 100) : 0;
+    const barColor = pnl >= 0 ? 'var(--red)' : 'var(--accent2)';
+
+    const broker = getBroker(s.brokerId);
+    const brokerDot = broker ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${broker.color};margin-right:4px;vertical-align:middle"></span>` : '';
+
+    return `<tr>
+      <td>
+        <div class="td-name">${s.name}</div>
+        <div class="td-sub">${s.code ? s.code + (s.memo ? ' · ' : '') : ''}${s.memo || ''}</div>
+      </td>
+      <td class="right">${qty ? qty.toLocaleString() + '주' : '—'}</td>
+      <td class="right">${avg ? fmt(avg) + '원' : '—'}</td>
+      <td class="right">${cur ? fmt(cur) + '원' : '—'}</td>
+      <td class="right">${buyAmt ? fmt(buyAmt) + '원' : '—'}</td>
+      <td>
+        <div class="profit-bar-wrap">
+          <span style="color:${pnlColor};font-family:'JetBrains Mono',monospace;font-size:13px;white-space:nowrap">${fmtSign(pnl)}</span>
+          <div class="profit-bar-bg">
+            <div class="profit-bar-fill" style="width:${barPct}%;background:${barColor}"></div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:${pnlColor};margin-top:3px;font-family:'JetBrains Mono',monospace">${buyAmt ? fmtPct(pnlPct) : '—'}</div>
+      </td>
+      <td class="right" style="font-weight:700;color:${evalAmt ? 'var(--text)' : 'var(--text-muted)'}">${evalAmt ? fmt(evalAmt) + '원' : '—'}</td>
+      ${showActions ? `<td style="text-align:center">
+        <div style="display:flex;gap:6px;justify-content:center">
+          <button class="btn-sm" onclick="openEditModal(${s.id})">수정</button>
+          <button class="btn-sm-red" onclick="deleteStock(${s.id})">삭제</button>
+        </div>
+      </td>` : `<td style="font-size:11px;color:var(--text-muted)">${brokerDot}${broker ? broker.name : '—'}</td>`}
+    </tr>`;
+  }).join('');
+
+  return `<div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>종목명</th>
+          <th class="right">보유수량</th>
+          <th class="right">평균매입가</th>
+          <th class="right">현재가</th>
+          <th class="right">매입금액</th>
+          <th>평가손익</th>
+          <th class="right">평가금액</th>
+          <th>${showActions ? '관리' : '증권사'}</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+function updateAddStockCard() {
+  const card = document.getElementById('addStockCard');
+  card.style.display = currentTab !== 'all' ? '' : 'none';
+}
+
+// ═══════════════════════════════════════════
+//  Broker CRUD
+// ═══════════════════════════════════════════
+function openAddBrokerModal() {
+  selectedBrokerColor = BROKER_COLORS[state.brokers.length % BROKER_COLORS.length];
+  buildColorPicker('colorPicker', selectedBrokerColor, c => { selectedBrokerColor = c; });
+  document.getElementById('broker-name-input').value = '';
+  document.getElementById('addBrokerModal').classList.add('show');
+  setTimeout(() => document.getElementById('broker-name-input').focus(), 100);
+}
+
+function closeAddBrokerModal() {
+  document.getElementById('addBrokerModal').classList.remove('show');
+}
+
+function confirmAddBroker() {
+  const name = document.getElementById('broker-name-input').value.trim();
+  if (!name) { showToast('증권사 이름을 입력해 주세요', 'var(--red)'); return; }
+  const id = state.nextBrokerId++;
+  state.brokers.push({ id, name, color: selectedBrokerColor });
+  saveState();
+  rebuildTabs();
+  closeAddBrokerModal();
+  switchTab(id);
+  showToast(`${name} 추가됨!`);
+}
+
+function openEditBrokerModal(id) {
+  const br = getBroker(id);
+  if (!br) return;
+  editBrokerColor = br.color;
+  document.getElementById('ebr-id').value = id;
+  document.getElementById('ebr-name').value = br.name;
+  buildColorPicker('ebrColorPicker', editBrokerColor, c => { editBrokerColor = c; });
+  document.getElementById('editBrokerModal').classList.add('show');
+}
+
+function saveEditBroker() {
+  const id = Number(document.getElementById('ebr-id').value);
+  const name = document.getElementById('ebr-name').value.trim();
+  if (!name) { showToast('이름을 입력해 주세요', 'var(--red)'); return; }
+  const br = getBroker(id);
+  if (!br) return;
+  br.name = name;
+  br.color = editBrokerColor;
+  saveState();
+  rebuildTabs();
+  document.getElementById('editBrokerModal').classList.remove('show');
+  render();
+  showToast(`${name} 수정됨`);
+}
+
+function deleteBroker(id) {
+  const br = getBroker(id);
+  if (!br) return;
+  const count = getBrokerStocks(id).length;
+  if (!confirm(`${br.name}을(를) 삭제하시겠습니까?\n${count > 0 ? `보유 종목 ${count}개도 함께 삭제됩니다.` : ''}`)) return;
+  state.brokers = state.brokers.filter(b => b.id !== id);
+  state.stocks = state.stocks.filter(s => s.brokerId !== id);
+  saveState();
+  currentTab = 'all';
+  rebuildTabs();
+  render();
+  showToast(`${br.name} 삭제됨`, 'var(--red)');
+}
+
+// ═══════════════════════════════════════════
+//  Stock CRUD
+// ═══════════════════════════════════════════
+function addStock() {
+  if (currentTab === 'all') return;
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { showToast('종목명을 입력해 주세요', 'var(--red)'); return; }
+  const qty = Number(document.getElementById('f-qty').value) || 0;
+  const avg = Number(document.getElementById('f-avg').value) || 0;
+  const cur = Number(document.getElementById('f-cur').value) || 0;
+  const code = document.getElementById('f-code').value.trim();
+  const memo = document.getElementById('f-memo').value.trim();
+
+  state.stocks.push({
+    id: state.nextId++,
+    brokerId: Number(currentTab),
+    name, code, qty, avgPrice: avg, curPrice: cur, memo
+  });
+  saveState();
+  clearAddForm();
+  render();
+  showToast(`${name} 추가됨!`);
+}
+
+function clearAddForm() {
+  ['f-name','f-code','f-qty','f-avg','f-cur','f-memo'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+}
+
+function openEditModal(id) {
+  const s = state.stocks.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-name').value = s.name;
+  document.getElementById('edit-code').value = s.code || '';
+  document.getElementById('edit-qty').value = s.qty || '';
+  document.getElementById('edit-avg').value = s.avgPrice || '';
+  document.getElementById('edit-cur').value = s.curPrice || '';
+  document.getElementById('edit-memo').value = s.memo || '';
+  document.getElementById('editModal').classList.add('show');
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('show');
+}
+
+function saveEdit() {
+  const id = Number(document.getElementById('edit-id').value);
+  const s = state.stocks.find(x => x.id === id);
+  if (!s) return;
+  const name = document.getElementById('edit-name').value.trim();
+  if (!name) { showToast('종목명을 입력해 주세요', 'var(--red)'); return; }
+  s.name = name;
+  s.code = document.getElementById('edit-code').value.trim();
+  s.qty = Number(document.getElementById('edit-qty').value) || 0;
+  s.avgPrice = Number(document.getElementById('edit-avg').value) || 0;
+  s.curPrice = Number(document.getElementById('edit-cur').value) || 0;
+  s.memo = document.getElementById('edit-memo').value.trim();
+  saveState();
+  closeEditModal();
+  render();
+  showToast(`${name} 수정됨`);
+}
+
+function deleteStock(id) {
+  const s = state.stocks.find(x => x.id === id);
+  if (!s || !confirm(`${s.name}을(를) 삭제하시겠습니까?`)) return;
+  state.stocks = state.stocks.filter(x => x.id !== id);
+  saveState();
+  render();
+  showToast(`${s.name} 삭제됨`, 'var(--red)');
+}
+
+// ═══════════════════════════════════════════
+//  Color Picker
+// ═══════════════════════════════════════════
+function buildColorPicker(containerId, selected, onChange) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  BROKER_COLORS.forEach(c => {
+    const sw = document.createElement('div');
+    sw.className = 'color-swatch' + (c === selected ? ' selected' : '');
+    sw.style.background = c;
+    sw.onclick = () => {
+      el.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('selected'));
+      sw.classList.add('selected');
+      onChange(c);
+    };
+    el.appendChild(sw);
+  });
+}
+
+// ═══════════════════════════════════════════
+//  Export / Import
+// ═══════════════════════════════════════════
+function openImportExport() {
+  document.getElementById('ieModal').classList.add('show');
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `stock_portfolio_${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`📤 stock_portfolio_${date}.json 저장됨`);
+}
+
+function importJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.brokers || !data.stocks) throw new Error('올바른 형식이 아닙니다.');
+      if (!confirm(`데이터를 불러오시겠습니까?\n기존 데이터는 모두 덮어씌워집니다.`)) return;
+      state = data;
+      saveState();
+      currentTab = 'all';
+      rebuildTabs();
+      render();
+      document.getElementById('ieModal').classList.remove('show');
+      showToast(`📥 ${data.stocks.length}개 종목 불러오기 완료!`);
+    } catch(err) {
+      showToast('파일 오류: ' + err.message, 'var(--red)');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════
+//  Keyboard shortcuts
+// ═══════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
+  }
+  if ((e.key === 'Enter') && document.getElementById('addBrokerModal').classList.contains('show')) {
+    confirmAddBroker();
+  }
+  if ((e.key === 'Enter') && document.getElementById('editModal').classList.contains('show')) {
+    saveEdit();
+  }
+});
+
+// Click outside modal to close
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('show');
+  });
+});
+
+// Enter in add-stock form
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.id && e.target.id.startsWith('f-')) {
+    addStock();
+  }
+});
+
+// ═══════════════════════════════════════════
+//  Init
+// ═══════════════════════════════════════════
+loadState();
+rebuildTabs();
+render();
+</script>
+</body>
+</html>
