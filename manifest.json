@@ -4,7 +4,7 @@
   "description": "주식 포트폴리오, 연간·주간 스케줄러를 한 곳에서",
   "start_url": "./index.html",
   "display": "standalone",
-  "orientation": "any",
+  "orientation": "portrait-primary",
   "background_color": "#f7f4ef",
   "theme_color": "#ffffff",
   "lang": "ko",
