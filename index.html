@@ -12,7 +12,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="MY.zip">
-<meta name="screen-orientation" content="portrait">
 <link rel="apple-touch-icon" href="icon-192.png">
 
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -304,7 +303,8 @@ nav { padding: 0.75rem 0; flex: 1; }
 /* ════════════════════════════════
    모바일 반응형
 ════════════════════════════════ */
-@media (max-width: 760px) {
+@media (max-width: 760px),
+       (hover: none) and (pointer: coarse) and (orientation: landscape) {
   /* 상단바 표시 */
   .topbar { display: flex; }
 
@@ -535,27 +535,26 @@ nav { padding: 0.75rem 0; flex: 1; }
     font-size:18px; cursor:pointer; padding:2px; line-height:1;">×</button>
 </div>
 
+<!-- 세로 방향 고정 -->
 <script>
-// 화면 방향 세로 고정 (Screen Orientation API)
-if (screen.orientation && screen.orientation.lock) {
-  screen.orientation.lock('portrait').catch(() => {});
-}
-
-// 가로 모드가 돼도 레이아웃이 바뀌지 않도록
-// viewport width를 항상 세로 기준(짧은 변)으로 고정
-(function lockPortraitLayout() {
-  function applyPortraitWidth() {
-    const w = Math.min(window.screen.width, window.screen.height);
-    const meta = document.querySelector('meta[name="viewport"]');
-    if (meta) {
-      meta.content = `width=${w}, initial-scale=1.0, maximum-scale=1.0, user-scalable=no`;
-    }
+  // 1) PWA 설치 시 OS 수준 잠금
+  if (screen.orientation && screen.orientation.lock) {
+    screen.orientation.lock('portrait').catch(() => {});
   }
-  applyPortraitWidth();
-  window.addEventListener('orientationchange', applyPortraitWidth);
-  window.addEventListener('resize', applyPortraitWidth);
-})();
+  // 2) viewport width를 항상 세로 기준(짧은 변)으로 고정
+  //    → 가로로 눕혀도 760px 미디어쿼리가 계속 적용됨
+  (function () {
+    var meta = document.querySelector('meta[name="viewport"]');
+    function fix() {
+      var w = Math.min(screen.width, screen.height);
+      if (meta) meta.content = 'width=' + w + ', initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+    }
+    fix();
+    window.addEventListener('orientationchange', function () { setTimeout(fix, 50); });
+    window.addEventListener('resize', fix);
+  })();
 </script>
+
 <script>
 const TOOLS = {
   portfolio: { file:'portfolio.html',           title:'주가차트 · 주식시세조회', label:'투자',   color:'#1a5fc8' },
