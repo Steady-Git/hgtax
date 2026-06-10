@@ -372,53 +372,23 @@ nav { padding: 0.75rem 0; flex: 1; }
 }
 
 /* ════════════════════════════════
-   가로 모드 차단 오버레이
+   가로 모드 → 세로처럼 강제 회전
 ════════════════════════════════ */
-#landscape-block {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 99999;
-  background: var(--bg);
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1.25rem;
-  text-align: center;
-  padding: 2rem;
-}
-#landscape-block svg {
-  width: 52px; height: 52px;
-  color: var(--accent);
-  animation: lb-rock 1.6s ease-in-out infinite;
-}
-#landscape-block p {
-  font-family: 'Noto Sans KR', sans-serif;
-  font-size: 15px;
-  color: var(--ink-muted);
-  line-height: 1.7;
-}
-@keyframes lb-rock {
-  0%,100% { transform: rotate(0deg); }
-  30%      { transform: rotate(-90deg); }
-  60%      { transform: rotate(-90deg); }
-  90%      { transform: rotate(0deg); }
-}
 @media (hover: none) and (pointer: coarse) and (orientation: landscape) {
-  #landscape-block { display: flex; }
+  html {
+    transform: rotate(-90deg);
+    transform-origin: top left;
+    width: 100vh;
+    height: 100vw;
+    position: fixed;
+    top: 100%;
+    left: 0;
+    overflow: hidden;
+  }
 }
 </style>
 </head>
 <body>
-
-<!-- 가로 모드 차단 오버레이 -->
-<div id="landscape-block">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-    <rect x="2" y="5" width="14" height="20" rx="2"/>
-    <path d="M16 9h4a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-4" stroke-dasharray="3 2"/>
-  </svg>
-  <p>화면을 세로로 돌려주세요</p>
-</div>
 
 <div class="app-shell">
 
