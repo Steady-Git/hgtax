@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>MY.zip — 나만의 도구 모음</title>
 
 <!-- PWA -->
@@ -325,22 +325,6 @@ nav { padding: 0.75rem 0; flex: 1; }
   .home-view { padding: 1.75rem 1.25rem 2.5rem; }
 }
 
-/* ════════════════════════════════
-   가로 회전 차단
-════════════════════════════════ */
-@media screen and (orientation: landscape) and (max-width: 960px) {
-  html {
-    transform: rotate(-90deg);
-    transform-origin: left top;
-    width: 100vh;
-    height: 100vw;
-    overflow-x: hidden;
-    position: absolute;
-    top: 100%;
-    left: 0;
-  }
-}
-
 @keyframes fadeUp {
   from { opacity:0; transform:translateY(16px); }
   to   { opacity:1; transform:translateY(0); }
@@ -556,6 +540,21 @@ nav { padding: 0.75rem 0; flex: 1; }
 if (screen.orientation && screen.orientation.lock) {
   screen.orientation.lock('portrait').catch(() => {});
 }
+
+// 가로 모드가 돼도 레이아웃이 바뀌지 않도록
+// viewport width를 항상 세로 기준(짧은 변)으로 고정
+(function lockPortraitLayout() {
+  function applyPortraitWidth() {
+    const w = Math.min(window.screen.width, window.screen.height);
+    const meta = document.querySelector('meta[name="viewport"]');
+    if (meta) {
+      meta.content = `width=${w}, initial-scale=1.0, maximum-scale=1.0, user-scalable=no`;
+    }
+  }
+  applyPortraitWidth();
+  window.addEventListener('orientationchange', applyPortraitWidth);
+  window.addEventListener('resize', applyPortraitWidth);
+})();
 </script>
 <script>
 const TOOLS = {
