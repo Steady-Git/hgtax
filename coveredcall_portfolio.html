@@ -3,20 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  @media screen and (orientation: landscape) and (max-width: 900px) {
-    html {
-      transform: rotate(-90deg);
-      transform-origin: left top;
-      width: 100vh;
-      height: 100vw;
-      overflow-x: hidden;
-      position: absolute;
-      top: 100%;
-      left: 0;
-    }
-  }
-</style>
 <title>💰 커버드콜 포트폴리오</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1805,13 +1791,6 @@ function histRenderTable(s) {
     </tbody>
   </table></div>`;
 }
-
-// 화면 세로 방향 고정
-(function lockPortrait() {
-  if (screen.orientation && screen.orientation.lock) {
-    screen.orientation.lock('portrait').catch(() => {});
-  }
-})();
 
 initApp();
 (function(){const now=new Date();const lbl=document.getElementById('sum-label');if(lbl)lbl.textContent=`${now.getFullYear()}년 ${now.getMonth()+1}월`;})();
